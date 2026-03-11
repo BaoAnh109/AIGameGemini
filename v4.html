@@ -1,0 +1,1623 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Survival Shooter - Solo & Multiplayer</title>
+    <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; overflow: hidden; background-color: #1a1a1a; color: white; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        canvas { display: block; }
+
+        /* ====== MENU & LOBBY ====== */
+        .screen-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 100; background: radial-gradient(ellipse at center, #1a2332 0%, #0a0e14 100%);
+        }
+        .screen-overlay.hidden { display: none; }
+
+        #menu-screen .game-title {
+            font-size: 52px; font-weight: 900; margin-bottom: 8px;
+            background: linear-gradient(135deg, #ffcc00, #ff6600);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: none; letter-spacing: 2px;
+        }
+        #menu-screen .game-subtitle { font-size: 16px; color: #888; margin-bottom: 50px; }
+
+        .menu-btn {
+            display: block; width: 280px; padding: 16px 0; margin: 8px 0; font-size: 18px;
+            font-weight: 700; border: 2px solid #444; border-radius: 10px; cursor: pointer;
+            transition: all 0.2s; text-align: center; letter-spacing: 1px;
+        }
+        .menu-btn:hover { transform: scale(1.04); }
+        .btn-solo { background: #2e7d32; color: white; border-color: #4CAF50; }
+        .btn-solo:hover { background: #388e3c; }
+        .btn-multi { background: #1565c0; color: white; border-color: #42a5f5; }
+        .btn-multi:hover { background: #1976d2; }
+        .btn-back { background: #333; color: #ccc; border-color: #555; width: 160px; margin-top: 20px; font-size: 14px; padding: 10px 0; }
+        .btn-back:hover { background: #444; }
+        .btn-start-game { background: #e65100; color: white; border-color: #ff9800; }
+        .btn-start-game:hover { background: #f57c00; }
+        .btn-start-game:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        /* Lobby */
+        #lobby-screen .lobby-box {
+            background: rgba(255,255,255,0.05); border: 1px solid #333; border-radius: 12px;
+            padding: 30px 40px; min-width: 380px; text-align: center;
+        }
+        #lobby-screen h2 { margin: 0 0 20px 0; color: #42a5f5; font-size: 24px; }
+        .lobby-row { display: flex; gap: 10px; margin: 10px 0; justify-content: center; align-items: center; }
+        .lobby-input {
+            padding: 12px 16px; font-size: 20px; border-radius: 8px; border: 2px solid #555;
+            background: #1a1a1a; color: #fff; text-align: center; width: 200px;
+            letter-spacing: 6px; font-weight: 700; text-transform: uppercase;
+        }
+        .lobby-input::placeholder { letter-spacing: 1px; font-weight: 400; font-size: 14px; }
+        .room-code-display {
+            font-size: 36px; font-weight: 900; letter-spacing: 8px; color: #ffcc00;
+            background: rgba(0,0,0,0.4); padding: 12px 24px; border-radius: 8px;
+            border: 2px dashed #ffcc00; margin: 15px 0; user-select: all;
+        }
+        .lobby-status { font-size: 14px; color: #aaa; margin: 10px 0; min-height: 20px; }
+        .player-list { text-align: left; margin: 15px 0; }
+        .player-list-item {
+            display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+            background: rgba(255,255,255,0.05); border-radius: 6px; margin: 4px 0; font-size: 14px;
+        }
+        .player-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .player-list-item.you { border: 1px solid #4CAF50; }
+        .lobby-or { color: #555; font-size: 13px; margin: 15px 0; }
+
+        /* ====== GAME UI (existing) ====== */
+        #game-ui.hidden { display: none; }
+        #ui { position: absolute; top: 10px; left: 10px; pointer-events: none; z-index: 10; }
+        .bar-bg { width: 200px; height: 20px; background: #333; border: 2px solid #555; border-radius: 10px; overflow: hidden; margin-bottom: 5px; }
+        .bar-hp { height: 100%; background: #ff3333; width: 100%; transition: width 0.1s; }
+        .bar-dash { height: 100%; background: #33ccff; width: 100%; }
+        #ammo { font-size: 20px; font-weight: bold; color: #ffcc00; }
+
+        #game-over { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 20; }
+        h1 { font-size: 48px; margin: 0; color: #fff; }
+        button.game-btn { margin-top: 20px; padding: 10px 30px; font-size: 20px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px; font-weight: bold; }
+        button.game-btn:hover { background: #45a049; }
+
+        #info { position: absolute; bottom: 10px; left: 10px; font-size: 14px; color: #aaa; pointer-events: none; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; z-index: 10; }
+
+        #status-panel {
+            position: absolute; top: 10px; right: 10px; width: 280px; max-height: 90vh;
+            background: rgba(20, 20, 20, 0.85); border: 1px solid #444; border-radius: 8px;
+            padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.5); overflow-y: auto;
+            pointer-events: none; z-index: 10; backdrop-filter: blur(4px);
+        }
+        #status-panel h3 { margin: 0 0 10px 0; font-size: 16px; color: #4CAF50; text-transform: uppercase; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        .stat-group { margin-bottom: 15px; }
+        .stat-item { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; padding: 4px; background: rgba(255,255,255,0.05); border-radius: 4px; }
+        .stat-item.dead { opacity: 0.4; text-decoration: line-through; color: #ff4444; }
+        .stat-label { font-weight: 600; color: #ddd; }
+        .stat-value { color: #fff; text-align: right; }
+        .badge { display: inline-block; padding: 2px 6px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-left: 5px; }
+        .badge.state-attack { background: #ff4444; color: white; }
+        .badge.state-flee { background: #ff9800; color: white; }
+        .badge.state-zone { background: #00bcd4; color: white; }
+        .badge.state-wander { background: #888; color: white; }
+        .badge.state-loot { background: #9c27b0; color: white; }
+
+        #algo-toggle {
+            position: absolute; top: 80px; left: 10px; z-index: 15;
+            background: rgba(10, 10, 25, 0.9); border: 1px solid #335; border-radius: 6px;
+            color: #7ecfff; font-size: 13px; font-weight: 700; padding: 6px 14px;
+            cursor: pointer; pointer-events: auto; transition: background 0.2s;
+        }
+        #algo-toggle:hover { background: rgba(30, 30, 60, 0.95); }
+
+        #algo-panel {
+            position: absolute; top: 115px; left: 10px; width: 310px; max-height: calc(85vh - 40px);
+            background: rgba(10, 10, 25, 0.9); border: 1px solid #335; border-radius: 8px;
+            padding: 12px; box-shadow: 0 4px 12px rgba(0,0,100,0.4); overflow-y: auto;
+            pointer-events: none; z-index: 10; backdrop-filter: blur(4px); font-size: 12px;
+            transition: opacity 0.25s, transform 0.25s;
+        }
+        #algo-panel.hidden { opacity: 0; transform: translateX(-20px); pointer-events: none; visibility: hidden; }
+        #algo-panel h3 { margin: 0 0 8px 0; font-size: 14px; color: #7ecfff; text-transform: uppercase; border-bottom: 1px solid #335; padding-bottom: 5px; letter-spacing: 1px; }
+        #algo-panel h4 { margin: 8px 0 4px 0; font-size: 12px; color: #ffeb3b; }
+        .algo-bot-section { margin-bottom: 10px; padding: 8px; background: rgba(255,255,255,0.04); border-radius: 6px; border-left: 3px solid #555; }
+        .algo-bot-section.high-iq { border-left-color: #4CAF50; }
+        .algo-bot-section.mid-iq { border-left-color: #ff9800; }
+        .algo-bot-section.low-iq { border-left-color: #f44336; }
+        .algo-row { display: flex; justify-content: space-between; padding: 2px 0; color: #ccc; }
+        .algo-row .val { color: #fff; font-weight: 600; }
+        .iq-bar-bg { width: 100%; height: 6px; background: #222; border-radius: 3px; margin: 3px 0; }
+        .iq-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+        .knowledge-log { max-height: 80px; overflow-y: auto; font-size: 11px; color: #8af; margin-top: 6px; padding: 4px; background: rgba(0,0,0,0.3); border-radius: 4px; }
+        .knowledge-log div { padding: 1px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+
+        /* Multiplayer ping indicator */
+        #ping-indicator {
+            position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+            font-size: 12px; color: #aaa; z-index: 10; pointer-events: none;
+            background: rgba(0,0,0,0.5); padding: 4px 12px; border-radius: 4px;
+        }
+        #ping-indicator.hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<!-- ====== MENU SCREEN ====== -->
+<div id="menu-screen" class="screen-overlay">
+    <div class="game-title">SURVIVAL SHOOTER</div>
+    <div class="game-subtitle">Battle Royale with AI Intelligence System</div>
+    <button class="menu-btn btn-solo" onclick="startSoloGame()">🎮 Chơi Đơn (Solo)</button>
+    <button class="menu-btn btn-multi" onclick="showLobby()">🌐 Chơi Online (Multiplayer)</button>
+</div>
+
+<!-- ====== LOBBY SCREEN ====== -->
+<div id="lobby-screen" class="screen-overlay hidden">
+    <div class="lobby-box">
+        <h2 id="lobby-title">🌐 Multiplayer</h2>
+
+        <!-- Create / Join selection -->
+        <div id="lobby-choice">
+            <button class="menu-btn btn-start-game" onclick="createRoom()">➕ Tạo Phòng</button>
+            <div class="lobby-or">── hoặc ──</div>
+            <div class="lobby-row">
+                <input id="join-code-input" class="lobby-input" placeholder="Mã phòng" maxlength="6" autocomplete="off">
+                <button class="menu-btn btn-multi" style="width:120px;margin:0" onclick="joinRoom()">Vào</button>
+            </div>
+            <button class="menu-btn btn-back" onclick="backToMenu()">← Quay lại</button>
+        </div>
+
+        <!-- Host waiting room -->
+        <div id="lobby-host" style="display:none">
+            <div>Mã phòng của bạn:</div>
+            <div class="room-code-display" id="room-code-show">------</div>
+            <div class="lobby-status" id="host-status">Đang kết nối...</div>
+            <div class="player-list" id="host-player-list"></div>
+            <button id="btn-start-mp" class="menu-btn btn-start-game" onclick="hostStartGame()" disabled>▶ Bắt đầu trận đấu</button>
+            <button class="menu-btn btn-back" onclick="leaveLobby()">← Huỷ phòng</button>
+        </div>
+
+        <!-- Client waiting room -->
+        <div id="lobby-client" style="display:none">
+            <div class="lobby-status" id="client-status">Đang kết nối...</div>
+            <div class="player-list" id="client-player-list"></div>
+            <div style="color:#888;font-size:13px;margin-top:10px">Chờ chủ phòng bắt đầu...</div>
+            <button class="menu-btn btn-back" onclick="leaveLobby()">← Rời phòng</button>
+        </div>
+    </div>
+</div>
+
+<!-- ====== GAME UI ====== -->
+<div id="game-ui" class="hidden">
+    <div id="ui">
+        <div id="player-label">Player 1 (Bạn - Màu Xanh)</div>
+        <div class="bar-bg"><div class="bar-hp" id="hp-bar"></div></div>
+        <div class="bar-bg" style="height: 10px;"><div class="bar-dash" id="dash-bar"></div></div>
+        <div id="ammo">Đạn: 30/30</div>
+    </div>
+
+    <button id="algo-toggle" onclick="toggleAlgoPanel()">🧠 Intelligence ▼</button>
+    <div id="algo-panel">
+        <h3>🧠 Bot Intelligence Monitor</h3>
+        <div id="algo-content"></div>
+    </div>
+
+    <div id="status-panel">
+        <h3>Telemetries (System Status)</h3>
+        <div id="status-content"></div>
+    </div>
+
+    <div id="info">
+        <b>Hướng dẫn:</b> WASD di chuyển | Chuột trái bắn | SPACE lướt (Dash) | R nạp đạn<br>
+        <i>Bản đồ 3000x3000. AI có Line of Sight. Nấp sau khối bê tông để né đạn.</i>
+    </div>
+
+    <div id="game-over">
+        <h1 id="go-title">KẾT THÚC</h1>
+        <p id="go-desc">...</p>
+        <button class="game-btn" onclick="backToMenuFromGame()">Về Menu</button>
+        <button class="game-btn" onclick="location.reload()">Chơi Lại</button>
+    </div>
+
+    <div id="ping-indicator" class="hidden">Ping: --ms</div>
+</div>
+
+<canvas id="gameCanvas"></canvas>
+
+<script>
+// ================================================================
+// GLOBAL STATE
+// ================================================================
+let currentScreen = 'menu'; // 'menu' | 'lobby' | 'game'
+let isMultiplayer = false;
+let isHost = false;
+let myPlayerIndex = 0; // which player[] index is "me"
+let gameRunning = false;
+let netManager = null;
+
+const PLAYER_COLORS = ['#2196F3', '#4CAF50', '#ff9800', '#e91e63'];
+const PLAYER_NAMES_MP = ['Player 1', 'Player 2', 'Player 3', 'Player 4'];
+
+// ================================================================
+// CANVAS SETUP
+// ================================================================
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+const WORLD_WIDTH = 3000;
+const WORLD_HEIGHT = 3000;
+const camera = { x: 0, y: 0, width: canvas.width, height: canvas.height };
+
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+    camera.width = canvas.width; camera.height = canvas.height;
+});
+
+// ================================================================
+// MATH & COLLISION UTILS
+// ================================================================
+function resolveCircleRectCollision(circle, rect) {
+    let testX = circle.x, testY = circle.y;
+    if (circle.x < rect.x) testX = rect.x;
+    else if (circle.x > rect.x + rect.w) testX = rect.x + rect.w;
+    if (circle.y < rect.y) testY = rect.y;
+    else if (circle.y > rect.y + rect.h) testY = rect.y + rect.h;
+    let distX = circle.x - testX, distY = circle.y - testY;
+    let distance = Math.sqrt(distX * distX + distY * distY);
+    if (distance <= circle.radius) {
+        let overlap = circle.radius - distance;
+        if (distance > 0) { circle.x += (distX / distance) * overlap; circle.y += (distY / distance) * overlap; }
+        else circle.y -= circle.radius;
+    }
+}
+
+function lineLineIntersect(x1, y1, x2, y2, x3, y3, x4, y4) {
+    let denom = ((y4-y3)*(x2-x1)) - ((x4-x3)*(y2-y1));
+    if (denom === 0) return false;
+    let ua = (((x4-x3)*(y1-y3)) - ((y4-y3)*(x1-x3))) / denom;
+    let ub = (((x2-x1)*(y1-y3)) - ((y2-y1)*(x1-x3))) / denom;
+    return (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1);
+}
+
+function lineRectIntersect(x1, y1, x2, y2, rx, ry, rw, rh) {
+    return lineLineIntersect(x1,y1,x2,y2,rx,ry,rx,ry+rh) ||
+           lineLineIntersect(x1,y1,x2,y2,rx+rw,ry,rx+rw,ry+rh) ||
+           lineLineIntersect(x1,y1,x2,y2,rx,ry,rx+rw,ry) ||
+           lineLineIntersect(x1,y1,x2,y2,rx,ry+rh,rx+rw,ry+rh) ||
+           (x1 >= rx && x1 <= rx+rw && y1 >= ry && y1 <= ry+rh);
+}
+
+// ================================================================
+// KNN SYSTEM
+// ================================================================
+class KNNPredictor {
+    constructor() { this.dataset = []; this.maxData = 200; this.lastPredictTime = 0; this.predictions = 0; this.hits = 0; }
+    record(distance, playerHp, isChased, dirX, dirY) {
+        if (this.dataset.length > this.maxData) this.dataset.shift();
+        this.dataset.push({ features: [distance, playerHp, isChased ? 1 : 0], label: { x: dirX, y: dirY }, time: Date.now() });
+    }
+    predict(distance, playerHp, isChased, k = 3) {
+        if (this.dataset.length < 5) return null;
+        this.lastPredictTime = Date.now(); this.predictions++;
+        let distances = this.dataset.map(data => {
+            let d = Math.sqrt(Math.pow(data.features[0]-distance,2)*0.5 + Math.pow(data.features[1]-playerHp,2)*2.0 + Math.pow(data.features[2]-(isChased?1:0),2)*50);
+            return { distance: d, label: data.label };
+        });
+        distances.sort((a,b) => a.distance - b.distance);
+        let topK = distances.slice(0, k);
+        let avgX = 0, avgY = 0;
+        topK.forEach(item => { avgX += item.label.x; avgY += item.label.y; });
+        let len = Math.sqrt(avgX*avgX + avgY*avgY);
+        if (len === 0) return { x: 0, y: 0 };
+        return { x: avgX/len, y: avgY/len };
+    }
+    getAccuracy() { return this.predictions > 0 ? (this.hits/this.predictions*100).toFixed(1) : 0; }
+}
+const GlobalKNN = new KNNPredictor();
+
+// ================================================================
+// BOT BRAIN (Intelligence System)
+// ================================================================
+class BotBrain {
+    constructor(ownerName) {
+        this.ownerName = ownerName;
+        this.localKNN = new KNNPredictor();
+        this.iq = 10; this.kills = 0; this.damageDealt = 0; this.damageAvoided = 0;
+        this.shotsHit = 0; this.shotsFired = 0; this.decisionsMade = 0;
+        this.survivalTime = Date.now(); this.knowledgeLog = []; this.maxLogSize = 20;
+        this.learnCooldown = 0; this.tacticalMemory = []; this.maxTactical = 30;
+        this.preferredRange = 280; this.aggressionBias = 0.5; this.fleeThreshold = 0.3;
+    }
+    recordCombatExperience(dist, targetHp, myHp, dirX, dirY, success) {
+        this.localKNN.record(dist, targetHp, myHp < 40, dirX, dirY);
+        if (success) { this.localKNN.hits++; this.iq = Math.min(100, this.iq + 0.3); }
+        this.decisionsMade++;
+    }
+    recordKill() { this.kills++; this.iq = Math.min(100, this.iq + 2); this.addLog('Hạ gục mục tiêu! IQ +2'); }
+    recordDamageDealt(amt) { this.damageDealt += amt; this.shotsHit++; this.iq = Math.min(100, this.iq + 0.15); }
+    recordShotFired() { this.shotsFired++; }
+    recordDodge() { this.damageAvoided++; this.iq = Math.min(100, this.iq + 0.1); }
+    recordDangerZone(x, y) {
+        if (this.tacticalMemory.length > this.maxTactical) this.tacticalMemory.shift();
+        this.tacticalMemory.push({ x, y, time: Date.now() });
+    }
+    isDangerousArea(x, y, radius = 150) {
+        let now = Date.now();
+        return this.tacticalMemory.some(m => (now - m.time < 15000) && Math.hypot(m.x - x, m.y - y) < radius);
+    }
+    learnFromOther(otherBrain) {
+        if (Date.now() - this.learnCooldown < 3000) return;
+        if (otherBrain.iq <= this.iq) return;
+        let iqGap = otherBrain.iq - this.iq;
+        let learnAmount = Math.min(1.5, iqGap * 0.05);
+        this.iq = Math.min(100, this.iq + learnAmount);
+        let sampleSize = Math.min(5, otherBrain.localKNN.dataset.length);
+        for (let i = 0; i < sampleSize; i++) {
+            let idx = Math.floor(Math.random() * otherBrain.localKNN.dataset.length);
+            let sample = otherBrain.localKNN.dataset[idx];
+            if (sample) { this.localKNN.dataset.push({...sample}); if (this.localKNN.dataset.length > this.localKNN.maxData) this.localKNN.dataset.shift(); }
+        }
+        this.preferredRange += (otherBrain.preferredRange - this.preferredRange) * 0.1;
+        this.aggressionBias += (otherBrain.aggressionBias - this.aggressionBias) * 0.1;
+        this.fleeThreshold += (otherBrain.fleeThreshold - this.fleeThreshold) * 0.1;
+        otherBrain.tacticalMemory.slice(-3).forEach(m => {
+            if (!this.tacticalMemory.some(t => Math.hypot(t.x - m.x, t.y - m.y) < 100)) this.tacticalMemory.push({...m});
+        });
+        this.learnCooldown = Date.now();
+        this.addLog(`Học từ ${otherBrain.ownerName} (+${learnAmount.toFixed(1)} IQ)`);
+    }
+    getDeathKnowledge() {
+        return { dataset: this.localKNN.dataset.slice(-20), tacticalMemory: this.tacticalMemory.slice(-10), preferredRange: this.preferredRange, aggressionBias: this.aggressionBias, iq: this.iq };
+    }
+    absorbDeathKnowledge(knowledge) {
+        knowledge.dataset.forEach(d => { this.localKNN.dataset.push({...d}); if (this.localKNN.dataset.length > this.localKNN.maxData) this.localKNN.dataset.shift(); });
+        knowledge.tacticalMemory.forEach(m => this.tacticalMemory.push({...m}));
+        let bonus = Math.min(3, knowledge.iq * 0.05);
+        this.iq = Math.min(100, this.iq + bonus);
+        this.addLog(`Kế thừa tri thức bot chết (+${bonus.toFixed(1)} IQ)`);
+    }
+    getAimSpread() { return Math.max(0.02, 0.15 - (this.iq / 100) * 0.12); }
+    getFireRateMod() { return Math.max(0.7, 1.0 - (this.iq / 100) * 0.3); }
+    shouldEngage(myHp, maxHp, threatDist, threatCount) {
+        let hpRatio = myHp / maxHp;
+        let dynamicThreshold = this.fleeThreshold + (threatCount - 1) * 0.1;
+        if (hpRatio < dynamicThreshold) return false;
+        if (this.iq > 50 && threatDist < 150 && threatCount > 2) return false;
+        return hpRatio > 0.4 || this.aggressionBias > 0.7;
+    }
+    predictTarget(dist, targetHp, isChased) {
+        let localPred = this.localKNN.predict(dist, targetHp, isChased, 3);
+        if (localPred && this.localKNN.dataset.length >= 10) return localPred;
+        return GlobalKNN.predict(dist, targetHp, isChased, 3);
+    }
+    getAccuracy() { return this.shotsFired > 0 ? (this.shotsHit / this.shotsFired * 100).toFixed(1) : '0.0'; }
+    addLog(msg) { this.knowledgeLog.push({ time: Date.now(), msg }); if (this.knowledgeLog.length > this.maxLogSize) this.knowledgeLog.shift(); }
+    getSurvivalMinutes() { return ((Date.now() - this.survivalTime) / 60000).toFixed(1); }
+}
+
+const KnowledgePool = {
+    sharedEvents: [], maxEvents: 50,
+    addEvent(type, data) { this.sharedEvents.push({ type, data, time: Date.now() }); if (this.sharedEvents.length > this.maxEvents) this.sharedEvents.shift(); },
+    getRecentEvents(since) { return this.sharedEvents.filter(e => e.time > since); }
+};
+
+// ================================================================
+// GAME ENTITY CLASSES
+// ================================================================
+class Obstacle {
+    constructor(x, y, w, h) { this.x = x; this.y = y; this.w = w; this.h = h; }
+    draw(ctx) {
+        ctx.fillStyle = '#444'; ctx.fillRect(this.x, this.y, this.w, this.h);
+        ctx.fillStyle = '#222'; ctx.fillRect(this.x, this.y + this.h - 5, this.w, 5); ctx.fillRect(this.x + this.w - 5, this.y, 5, this.h);
+        ctx.strokeStyle = '#111'; ctx.lineWidth = 2; ctx.strokeRect(this.x, this.y, this.w, this.h);
+    }
+}
+
+class SafeZone {
+    constructor() { this.x = WORLD_WIDTH/2; this.y = WORLD_HEIGHT/2; this.radius = Math.max(WORLD_WIDTH,WORLD_HEIGHT)*0.8; this.targetRadius = 200; this.shrinkRate = 0.2; }
+    update() { if (this.radius > this.targetRadius) this.radius -= this.shrinkRate; }
+    draw(ctx) {
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+        ctx.strokeStyle = 'rgba(0,255,255,0.8)'; ctx.lineWidth = 5; ctx.stroke();
+        ctx.fillStyle = 'rgba(0,0,200,0.2)'; ctx.fillRect(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+    }
+}
+
+class Entity {
+    constructor(x, y, radius, color, hp, name = "Entity") {
+        this.x = x; this.y = y; this.radius = radius; this.color = color;
+        this.maxHp = hp; this.hp = hp; this.speed = 2.5; this.isDead = false; this.name = name;
+    }
+    draw(ctx) {
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+        ctx.fillStyle = this.color; ctx.fill();
+        ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.stroke();
+        if (this.hp < this.maxHp && !this.isDead) {
+            ctx.fillStyle = 'red'; ctx.fillRect(this.x-15, this.y-this.radius-12, 30, 4);
+            ctx.fillStyle = '#00ff00'; ctx.fillRect(this.x-15, this.y-this.radius-12, 30*(this.hp/this.maxHp), 4);
+        }
+        // Draw name above entity
+        if (this.name && !this.isDead) {
+            ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText(this.name, this.x, this.y - this.radius - 16);
+        }
+    }
+    takeDamage(amt) { this.hp -= amt; if (this.hp <= 0) this.isDead = true; }
+    checkZoneDamage(zone) { if (Math.hypot(this.x-zone.x, this.y-zone.y) > zone.radius) this.takeDamage(0.1); }
+    resolveCollisions(obstacles) {
+        for (let obs of obstacles) resolveCircleRectCollision(this, obs);
+        this.x = Math.max(this.radius, Math.min(WORLD_WIDTH-this.radius, this.x));
+        this.y = Math.max(this.radius, Math.min(WORLD_HEIGHT-this.radius, this.y));
+    }
+}
+
+class Player extends Entity {
+    constructor(x, y, isBot = false, name = "Player") {
+        super(x, y, 15, isBot ? '#4CAF50' : '#2196F3', 100, name);
+        this.isBot = isBot; this.isRemote = false;
+        this.ammo = 30; this.maxAmmo = 30; this.lastShot = 0; this.fireRate = 300;
+        this.isReloading = false; this.reloadTime = 1500;
+        this.isDashing = false; this.dashCooldown = 2000; this.lastDash = 0;
+        this.dashSpeed = 9; this.dashTime = 200; this.dashTargetX = 0; this.dashTargetY = 0;
+        // Remote input state (for multiplayer remote players on host)
+        this.remoteKeys = {};
+        this.remoteMouse = { screenX: 0, screenY: 0, down: false };
+        this.remoteCameraX = 0; this.remoteCameraY = 0;
+    }
+    reload() {
+        if (this.isReloading || this.ammo === this.maxAmmo) return;
+        this.isReloading = true;
+        setTimeout(() => { this.ammo = this.maxAmmo; this.isReloading = false; }, this.reloadTime);
+    }
+    update(keys, mouse, projectiles, zone, obstacles) {
+        if (this.isDead) return;
+        this.checkZoneDamage(zone);
+        let now = Date.now();
+        if (this.isDashing) {
+            if (now - this.lastDash > this.dashTime) this.isDashing = false;
+            else { this.x += this.dashTargetX * this.dashSpeed; this.y += this.dashTargetY * this.dashSpeed; this.resolveCollisions(obstacles); return; }
+        }
+        if (!this.isBot) {
+            let inputKeys = this.isRemote ? this.remoteKeys : keys;
+            let inputMouse = this.isRemote ? this.remoteMouse : mouse;
+
+            let dx = 0, dy = 0;
+            if (inputKeys['w']) dy -= 1; if (inputKeys['s']) dy += 1;
+            if (inputKeys['a']) dx -= 1; if (inputKeys['d']) dx += 1;
+            if (dx !== 0 || dy !== 0) {
+                let len = Math.hypot(dx, dy); dx /= len; dy /= len;
+                this.x += dx * this.speed; this.y += dy * this.speed;
+            }
+            if (inputKeys[' '] && now - this.lastDash > this.dashCooldown && (dx !== 0 || dy !== 0)) {
+                this.isDashing = true; this.lastDash = now; this.dashTargetX = dx; this.dashTargetY = dy;
+                let distToCenter = Math.hypot(this.x - WORLD_WIDTH/2, this.y - WORLD_HEIGHT/2);
+                GlobalKNN.record(distToCenter, this.hp, false, dx, dy);
+            }
+            if (inputKeys['r']) this.reload();
+            if (inputMouse.down && now - this.lastShot > this.fireRate) {
+                if (this.ammo > 0 && !this.isReloading) {
+                    let worldMouseX, worldMouseY;
+                    if (this.isRemote) {
+                        worldMouseX = inputMouse.screenX + this.remoteCameraX;
+                        worldMouseY = inputMouse.screenY + this.remoteCameraY;
+                    } else {
+                        worldMouseX = inputMouse.screenX + camera.x;
+                        worldMouseY = inputMouse.screenY + camera.y;
+                    }
+                    this.shoot(worldMouseX, worldMouseY, projectiles);
+                } else if (this.ammo <= 0 && !this.isReloading) this.reload();
+            }
+        }
+        this.resolveCollisions(obstacles);
+    }
+    shoot(tx, ty, projectiles) {
+        let angle = Math.atan2(ty-this.y, tx-this.x);
+        angle += (Math.random()-0.5) * 0.1;
+        projectiles.push(new Projectile(this.x, this.y, Math.cos(angle), Math.sin(angle), this));
+        this.ammo--; this.lastShot = Date.now();
+        if (this.ammo <= 0) this.reload();
+    }
+}
+
+class BotPlayer extends Player {
+    constructor(x, y, name) {
+        super(x, y, true, name);
+        this.state = "WANDER"; this.wanderAngle = Math.random()*Math.PI*2; this.stateTimer = 0;
+        this.brain = new BotBrain(name);
+        this.brain.aggressionBias = 0.3 + Math.random()*0.5;
+        this.brain.preferredRange = 220 + Math.random()*120;
+        this.lastHp = this.hp; this.lastLearnTick = 0;
+    }
+    hasLineOfSight(target, obstacles) {
+        for (let obs of obstacles) { if (lineRectIntersect(this.x, this.y, target.x, target.y, obs.x, obs.y, obs.w, obs.h)) return false; }
+        return true;
+    }
+    updateAI(players, monsters, items, zone, projectiles, obstacles) {
+        if (this.isDead) return;
+        let now = Date.now();
+        if (this.isDashing) {
+            if (now - this.lastDash > this.dashTime) this.isDashing = false;
+            else { this.x += this.dashTargetX * this.dashSpeed; this.y += this.dashTargetY * this.dashSpeed; this.resolveCollisions(obstacles); return; }
+        }
+        if (now - this.lastLearnTick > 2000) {
+            this.lastLearnTick = now;
+            let otherBots = players.filter(p => p !== this && p.isBot && !p.isDead && p.brain);
+            for (let other of otherBots) { if (Math.hypot(this.x-other.x, this.y-other.y) < 600) this.brain.learnFromOther(other.brain); }
+            this.brain.iq = Math.min(100, this.brain.iq + 0.05);
+        }
+        if (this.hp < this.lastHp) { this.brain.recordDangerZone(this.x, this.y); KnowledgePool.addEvent('damage_taken', {x:this.x,y:this.y,bot:this.name}); }
+        else if (this.hp === this.lastHp && this.state === 'FLEE') this.brain.recordDodge();
+        this.lastHp = this.hp;
+        this.checkZoneDamage(zone);
+        this.brain.decisionsMade++;
+        let distToZone = Math.hypot(this.x-zone.x, this.y-zone.y);
+        let allThreats = players.filter(p => p !== this && !p.isDead).concat(monsters);
+        let closestThreat = this.getClosest(allThreats);
+        let closestItem = this.getClosest(items);
+        let nearbyThreats = allThreats.filter(t => !t.isDead && Math.hypot(this.x-t.x, this.y-t.y) < 400).length;
+        let smartFleeThreshold = this.brain.fleeThreshold;
+        let smartAttackRange = 400 + (this.brain.iq/100)*150;
+        if (distToZone > zone.radius - 50) { this.state = "ZONE"; this.moveTo(zone.x, zone.y); }
+        else if (this.hp < this.maxHp * smartFleeThreshold || !this.brain.shouldEngage(this.hp, this.maxHp, closestThreat ? closestThreat.dist : 9999, nearbyThreats)) {
+            this.state = "FLEE";
+            if (closestItem && closestItem.dist < 350) this.moveTo(closestItem.x, closestItem.y);
+            else {
+                if (closestThreat && closestThreat.dist < 300) {
+                    let dirX = this.x - closestThreat.entity.x, dirY = this.y - closestThreat.entity.y;
+                    if (this.brain.iq > 40) { let safeDirX = (zone.x-this.x)*0.3+dirX*0.7; let safeDirY = (zone.y-this.y)*0.3+dirY*0.7; this.moveDir(safeDirX, safeDirY); }
+                    else this.moveDir(dirX, dirY);
+                    if (now - this.lastDash > this.dashCooldown) this.triggerDash(dirX, dirY);
+                } else this.wander();
+            }
+        } else if (closestThreat && closestThreat.dist < smartAttackRange) {
+            this.state = "ATTACK";
+            let target = closestThreat.entity;
+            let los = this.hasLineOfSight(target, obstacles);
+            if (!los) this.moveTo(target.x, target.y);
+            else {
+                let prefRange = this.brain.preferredRange;
+                if (closestThreat.dist < prefRange - 80) this.moveDir(this.x-target.x, this.y-target.y);
+                else if (closestThreat.dist > prefRange + 70) this.moveTo(target.x, target.y);
+                else if (this.brain.iq > 35) {
+                    let perpX = -(target.y-this.y), perpY = target.x-this.x;
+                    let sDir = (Math.sin(now*0.003+this.x)>0) ? 1 : -1;
+                    this.moveDir(perpX*sDir, perpY*sDir);
+                }
+                let effectiveFireRate = this.fireRate * this.brain.getFireRateMod();
+                if (now - this.lastShot > effectiveFireRate) {
+                    if (this.ammo > 0 && !this.isReloading) {
+                        let shootTargetX = target.x, shootTargetY = target.y;
+                        let isChased = monsters.some(m => Math.hypot(m.x-target.x,m.y-target.y) < 150);
+                        let predictedDir = this.brain.predictTarget(closestThreat.dist, target.hp, isChased);
+                        if (predictedDir) {
+                            let timeToReach = closestThreat.dist / 10;
+                            let predictedSpeed = target.isDashing ? target.dashSpeed : target.speed;
+                            shootTargetX += predictedDir.x * predictedSpeed * timeToReach;
+                            shootTargetY += predictedDir.y * predictedSpeed * timeToReach;
+                            this.useKNNShot = true;
+                        } else this.useKNNShot = false;
+                        let ddx = target.x-this.x, ddy = target.y-this.y, dLen = Math.hypot(ddx,ddy);
+                        this.brain.recordCombatExperience(closestThreat.dist, target.hp, this.hp, ddx/dLen, ddy/dLen, false);
+                        this.brain.recordShotFired();
+                        this.shoot(shootTargetX, shootTargetY, projectiles);
+                    } else if (this.ammo <= 0 && !this.isReloading) this.reload();
+                }
+            }
+        } else {
+            this.state = "LOOT";
+            if (closestItem && closestItem.dist < 400) this.moveTo(closestItem.x, closestItem.y);
+            else if (this.brain.iq > 50 && closestItem && closestItem.dist < 700) this.moveTo(closestItem.x, closestItem.y);
+            else this.wander();
+        }
+        this.resolveCollisions(obstacles);
+    }
+    shoot(tx, ty, projectiles) {
+        let spread = this.brain.getAimSpread();
+        let angle = Math.atan2(ty-this.y, tx-this.x); angle += (Math.random()-0.5)*spread;
+        let proj = new Projectile(this.x, this.y, Math.cos(angle), Math.sin(angle), this);
+        if (this.useKNNShot) proj.color = '#ff00ff';
+        projectiles.push(proj); this.ammo--; this.lastShot = Date.now();
+        if (this.ammo <= 0) this.reload(); this.useKNNShot = false;
+    }
+    getClosest(list) {
+        let min = Infinity, target = null;
+        for (let ent of list) { if (ent.isDead) continue; let d = Math.hypot(this.x-ent.x, this.y-ent.y); if (d < min) { min = d; target = ent; } }
+        return target ? { entity: target, dist: min } : null;
+    }
+    moveTo(tx, ty) { let dx = tx-this.x, dy = ty-this.y, len = Math.hypot(dx,dy); if (len>0) { this.x += (dx/len)*this.speed*0.8; this.y += (dy/len)*this.speed*0.8; } }
+    moveDir(dx, dy) { let len = Math.hypot(dx,dy); if (len>0) { this.x += (dx/len)*this.speed*0.8; this.y += (dy/len)*this.speed*0.8; } }
+    wander() { if (Date.now()-this.stateTimer>2000) { this.wanderAngle = Math.random()*Math.PI*2; this.stateTimer = Date.now(); } this.x += Math.cos(this.wanderAngle)*this.speed*0.5; this.y += Math.sin(this.wanderAngle)*this.speed*0.5; }
+    triggerDash(dx, dy) { this.isDashing = true; this.lastDash = Date.now(); let len = Math.hypot(dx,dy); this.dashTargetX = dx/len; this.dashTargetY = dy/len; }
+}
+
+class Monster extends Entity {
+    constructor(x, y) {
+        super(x, y, 10, '#ff3333', 30, "Zombie");
+        this.speed = 0.8; this.damage = 10; this.attackRate = 1000; this.lastAttack = 0;
+    }
+    update(players, monsters, obstacles) {
+        if (this.isDead) return;
+        let minD = Infinity, target = null, now = Date.now();
+        for (let p of players) {
+            if (p.isDead) continue;
+            let d = Math.hypot(this.x-p.x, this.y-p.y);
+            if (d < this.radius+p.radius && !p.isDashing) { if (now-this.lastAttack > this.attackRate) { p.takeDamage(this.damage); this.lastAttack = now; } }
+            if (d < minD) { minD = d; target = p; }
+        }
+        let moveX = 0, moveY = 0;
+        if (target) { let dx = target.x-this.x, dy = target.y-this.y, len = Math.hypot(dx,dy); moveX += dx/len; moveY += dy/len; }
+        for (let m of monsters) { if (m===this||m.isDead) continue; let d = Math.hypot(this.x-m.x,this.y-m.y); if (d<25) { moveX -= (m.x-this.x); moveY -= (m.y-this.y); } }
+        let moveLen = Math.hypot(moveX, moveY);
+        if (moveLen > 0) { this.x += (moveX/moveLen)*this.speed; this.y += (moveY/moveLen)*this.speed; }
+        this.resolveCollisions(obstacles);
+    }
+}
+
+class Projectile {
+    constructor(x, y, vx, vy, owner) {
+        this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.speed = 10;
+        this.radius = 3; this.owner = owner; this.damage = 15; this.life = 150; this.color = '#ffff00';
+        this.ownerIndex = -1; // for multiplayer serialization
+    }
+    update() { this.x += this.vx*this.speed; this.y += this.vy*this.speed; this.life--; }
+    draw(ctx) { ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2); ctx.fillStyle = this.color; ctx.fill(); }
+}
+
+class Item {
+    constructor(x, y) { this.x = x; this.y = y; this.radius = 10; this.isPicked = false; }
+    draw(ctx) {
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+        ctx.fillStyle = '#ff99cc'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.fillStyle = '#fff'; ctx.fillRect(this.x-1, this.y-5, 2, 10); ctx.fillRect(this.x-5, this.y-1, 10, 2);
+    }
+}
+
+// ================================================================
+// INPUT HANDLING
+// ================================================================
+const keys = {};
+const mouse = { screenX: 0, screenY: 0, down: false };
+
+window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+window.addEventListener('mousemove', e => { mouse.screenX = e.clientX; mouse.screenY = e.clientY; });
+window.addEventListener('mousedown', e => { if (currentScreen === 'game') mouse.down = true; });
+window.addEventListener('mouseup', e => mouse.down = false);
+
+// ================================================================
+// GAME VARIABLES (initialized per game session)
+// ================================================================
+let safeZone, projectiles, items, monsters, obstacles, players, player1;
+let clientProjectiles = []; // client-side predicted projectiles (visual only)
+let gamePaused = false;
+let monsterSpawnInterval = null;
+
+// ================================================================
+// OBSTACLE GENERATION (deterministic with seed for multiplayer sync)
+// ================================================================
+function createObstaclesSeed(seed) {
+    let obs = [];
+    let cx = WORLD_WIDTH/2, cy = WORLD_HEIGHT/2;
+    obs.push(new Obstacle(cx-200, cy-200, 400, 50));
+    obs.push(new Obstacle(cx-200, cy+150, 400, 50));
+    obs.push(new Obstacle(cx-300, cy-100, 50, 200));
+    obs.push(new Obstacle(cx+250, cy-100, 50, 200));
+    // Seeded random for consistent map across all peers
+    let s = seed;
+    function seededRandom() { s = (s * 16807 + 0) % 2147483647; return (s - 1) / 2147483646; }
+    for (let i = 0; i < 30; i++) {
+        let ow = 50 + seededRandom()*150, oh = 50 + seededRandom()*150;
+        let ox = 100 + seededRandom()*(WORLD_WIDTH-200-ow), oy = 100 + seededRandom()*(WORLD_HEIGHT-200-oh);
+        if (ox > cx-400 && ox < cx+400 && oy > cy-400 && oy < cy+400) continue;
+        obs.push(new Obstacle(ox, oy, ow, oh));
+    }
+    return obs;
+}
+
+// ================================================================
+// NETWORKING - PeerJS P2P Manager
+// ================================================================
+class NetworkManager {
+    constructor() {
+        this.peer = null;
+        this.connections = []; // host: array of DataConnection to clients
+        this.hostConn = null;  // client: DataConnection to host
+        this.roomCode = '';
+        this.isHost = false;
+        this.playerInfos = []; // [{name, color, peerId}]
+        this.onPlayerJoined = null;
+        this.onPlayerLeft = null;
+        this.onGameStart = null;
+        this.onStateReceived = null;
+        this.onInputReceived = null;
+        this.lastPing = 0;
+        this.pingInterval = null;
+        this.latency = 0;
+    }
+
+    generateRoomCode() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+        let code = '';
+        for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+        return code;
+    }
+
+    getPeerId(code) { return 'surv-shooter-' + code.toUpperCase(); }
+
+    createRoom(callback) {
+        this.isHost = true;
+        this.roomCode = this.generateRoomCode();
+        let peerId = this.getPeerId(this.roomCode);
+        this.playerInfos = [{ name: PLAYER_NAMES_MP[0], color: PLAYER_COLORS[0], peerId: 'host', index: 0 }];
+
+        this.peer = new Peer(peerId, { debug: 0 });
+        this.peer.on('open', (id) => {
+            callback(null, this.roomCode);
+            this.peer.on('connection', (conn) => this._handleNewConnection(conn));
+        });
+        this.peer.on('error', (err) => {
+            if (err.type === 'unavailable-id') callback('Mã phòng đã tồn tại, thử lại!');
+            else callback('Lỗi kết nối: ' + err.message);
+        });
+    }
+
+    _handleNewConnection(conn) {
+        if (this.connections.length >= 3) { conn.close(); return; } // max 4 players
+        let playerIndex = this.connections.length + 1;
+        let info = { name: PLAYER_NAMES_MP[playerIndex], color: PLAYER_COLORS[playerIndex], peerId: conn.peer, index: playerIndex };
+
+        conn.on('open', () => {
+            this.connections.push(conn);
+            this.playerInfos.push(info);
+            // Send lobby info to new client
+            conn.send({ type: 'lobby-info', yourIndex: playerIndex, players: this.playerInfos, roomCode: this.roomCode });
+            // Notify all existing clients about updated player list
+            this._broadcastLobbyUpdate();
+            if (this.onPlayerJoined) this.onPlayerJoined(info);
+        });
+
+        conn.on('data', (data) => {
+            if (data.type === 'input' && this.onInputReceived) {
+                this.onInputReceived(data, info.index);
+            } else if (data.type === 'pong') {
+                this.latency = Date.now() - data.timestamp;
+            }
+        });
+
+        conn.on('close', () => {
+            this.connections = this.connections.filter(c => c !== conn);
+            this.playerInfos = this.playerInfos.filter(p => p.peerId !== conn.peer);
+            // Re-index
+            this.playerInfos.forEach((p, i) => p.index = i);
+            this._broadcastLobbyUpdate();
+            if (this.onPlayerLeft) this.onPlayerLeft(info);
+        });
+    }
+
+    _broadcastLobbyUpdate() {
+        this.connections.forEach((conn, i) => {
+            try { conn.send({ type: 'lobby-update', players: this.playerInfos, yourIndex: i + 1 }); } catch(e) {}
+        });
+    }
+
+    joinRoom(code, callback) {
+        this.isHost = false;
+        this.roomCode = code.toUpperCase();
+        let peerId = 'surv-client-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+
+        this.peer = new Peer(peerId, { debug: 0 });
+        this.peer.on('open', () => {
+            let hostPeerId = this.getPeerId(this.roomCode);
+            let conn = this.peer.connect(hostPeerId, { reliable: true });
+            this.hostConn = conn;
+
+            conn.on('open', () => { callback(null); });
+
+            conn.on('data', (data) => {
+                if (data.type === 'lobby-info') {
+                    myPlayerIndex = data.yourIndex;
+                    this.playerInfos = data.players;
+                    this._updateClientLobby();
+                } else if (data.type === 'lobby-update') {
+                    myPlayerIndex = data.yourIndex;
+                    this.playerInfos = data.players;
+                    this._updateClientLobby();
+                } else if (data.type === 'game-start') {
+                    if (this.onGameStart) this.onGameStart(data);
+                } else if (data.type === 'state') {
+                    if (this.onStateReceived) this.onStateReceived(data);
+                } else if (data.type === 'ping') {
+                    conn.send({ type: 'pong', timestamp: data.timestamp });
+                }
+            });
+
+            conn.on('close', () => {
+                alert('Mất kết nối với host!');
+                leaveLobby();
+            });
+
+            let timeout = setTimeout(() => { callback('Không tìm thấy phòng hoặc hết thời gian kết nối.'); }, 8000);
+            conn.on('open', () => clearTimeout(timeout));
+        });
+
+        this.peer.on('error', (err) => {
+            if (err.type === 'peer-unavailable') callback('Phòng không tồn tại hoặc đã đóng.');
+            else callback('Lỗi: ' + err.message);
+        });
+    }
+
+    _updateClientLobby() {
+        updateLobbyPlayerList(this.playerInfos, myPlayerIndex, false);
+    }
+
+    // Host broadcasts game state to all clients
+    broadcastState(stateData) {
+        for (let conn of this.connections) {
+            try { conn.send(stateData); } catch(e) {}
+        }
+    }
+
+    // Host signals game start
+    broadcastGameStart(data) {
+        for (let conn of this.connections) {
+            try { conn.send({ type: 'game-start', ...data }); } catch(e) {}
+        }
+    }
+
+    // Client sends input to host
+    sendInput(inputData) {
+        if (this.hostConn && this.hostConn.open) {
+            try { this.hostConn.send(inputData); } catch(e) {}
+        }
+    }
+
+    startPing() {
+        this.pingInterval = setInterval(() => {
+            let ts = Date.now();
+            if (this.isHost) {
+                for (let conn of this.connections) { try { conn.send({ type: 'ping', timestamp: ts }); } catch(e) {} }
+            }
+        }, 2000);
+    }
+
+    destroy() {
+        if (this.pingInterval) clearInterval(this.pingInterval);
+        if (this.peer) { this.peer.destroy(); this.peer = null; }
+        this.connections = []; this.hostConn = null;
+    }
+}
+
+// ================================================================
+// SCREEN MANAGEMENT
+// ================================================================
+function showScreen(name) {
+    currentScreen = name;
+    document.getElementById('menu-screen').classList.toggle('hidden', name !== 'menu');
+    document.getElementById('lobby-screen').classList.toggle('hidden', name !== 'lobby');
+    document.getElementById('game-ui').classList.toggle('hidden', name !== 'game');
+}
+
+function backToMenu() { showScreen('menu'); }
+
+function backToMenuFromGame() {
+    cleanupGame();
+    showScreen('menu');
+}
+
+function showLobby() {
+    showScreen('lobby');
+    document.getElementById('lobby-choice').style.display = '';
+    document.getElementById('lobby-host').style.display = 'none';
+    document.getElementById('lobby-client').style.display = 'none';
+}
+
+// ================================================================
+// LOBBY FUNCTIONS
+// ================================================================
+function createRoom() {
+    if (netManager) netManager.destroy();
+    netManager = new NetworkManager();
+
+    document.getElementById('lobby-choice').style.display = 'none';
+    document.getElementById('lobby-host').style.display = '';
+    document.getElementById('host-status').textContent = 'Đang tạo phòng...';
+    document.getElementById('room-code-show').textContent = '------';
+    document.getElementById('btn-start-mp').disabled = true;
+
+    netManager.createRoom((err, code) => {
+        if (err) {
+            document.getElementById('host-status').textContent = err;
+            return;
+        }
+        isHost = true;
+        myPlayerIndex = 0;
+        document.getElementById('room-code-show').textContent = code;
+        document.getElementById('host-status').textContent = 'Đang chờ người chơi... (1/4)';
+        document.getElementById('btn-start-mp').disabled = false;
+        updateLobbyPlayerList(netManager.playerInfos, 0, true);
+
+        netManager.onPlayerJoined = (info) => {
+            document.getElementById('host-status').textContent = `${netManager.playerInfos.length}/4 người chơi`;
+            updateLobbyPlayerList(netManager.playerInfos, 0, true);
+        };
+        netManager.onPlayerLeft = (info) => {
+            document.getElementById('host-status').textContent = `${netManager.playerInfos.length}/4 người chơi`;
+            updateLobbyPlayerList(netManager.playerInfos, 0, true);
+        };
+    });
+}
+
+function joinRoom() {
+    let code = document.getElementById('join-code-input').value.trim().toUpperCase();
+    if (code.length < 4) { alert('Nhập mã phòng hợp lệ!'); return; }
+
+    if (netManager) netManager.destroy();
+    netManager = new NetworkManager();
+
+    document.getElementById('lobby-choice').style.display = 'none';
+    document.getElementById('lobby-client').style.display = '';
+    document.getElementById('client-status').textContent = 'Đang kết nối...';
+
+    netManager.onGameStart = (data) => {
+        startMultiplayerClientGame(data);
+    };
+
+    netManager.joinRoom(code, (err) => {
+        if (err) {
+            document.getElementById('client-status').textContent = err;
+            setTimeout(() => {
+                document.getElementById('lobby-client').style.display = 'none';
+                document.getElementById('lobby-choice').style.display = '';
+            }, 2500);
+            return;
+        }
+        isHost = false;
+        document.getElementById('client-status').textContent = 'Đã vào phòng! Chờ bắt đầu...';
+    });
+}
+
+function updateLobbyPlayerList(playerInfos, myIndex, isHostView) {
+    let containerId = isHostView ? 'host-player-list' : 'client-player-list';
+    let container = document.getElementById(containerId);
+    let html = '';
+    playerInfos.forEach((p, i) => {
+        let youClass = (i === myIndex) ? ' you' : '';
+        let youTag = (i === myIndex) ? ' <span style="color:#4CAF50">(Bạn)</span>' : '';
+        let hostTag = (i === 0) ? ' <span style="color:#ffcc00">👑</span>' : '';
+        html += `<div class="player-list-item${youClass}">
+            <div class="player-dot" style="background:${p.color}"></div>
+            <span>${p.name}${hostTag}${youTag}</span>
+        </div>`;
+    });
+    container.innerHTML = html;
+}
+
+function leaveLobby() {
+    if (netManager) { netManager.destroy(); netManager = null; }
+    isHost = false; isMultiplayer = false;
+    showLobby();
+}
+
+function hostStartGame() {
+    if (!netManager || !isHost) return;
+    let mapSeed = Math.floor(Math.random() * 999999) + 1;
+    let totalPlayers = netManager.playerInfos.length;
+    let totalBots = 4 - totalPlayers; // fill remaining slots with bots
+
+    // Notify all clients
+    netManager.broadcastGameStart({ mapSeed, totalPlayers, totalBots, playerInfos: netManager.playerInfos });
+
+    // Start game as host
+    startMultiplayerHostGame(mapSeed, totalPlayers, totalBots, netManager.playerInfos);
+}
+
+// ================================================================
+// GAME INITIALIZATION
+// ================================================================
+function cleanupGame() {
+    gameRunning = false;
+    gamePaused = false;
+    if (monsterSpawnInterval) { clearInterval(monsterSpawnInterval); monsterSpawnInterval = null; }
+    if (netManager) { netManager.destroy(); netManager = null; }
+    document.getElementById('game-over').style.display = 'none';
+    isMultiplayer = false; isHost = false;
+}
+
+function startSoloGame() {
+    cleanupGame();
+    isMultiplayer = false;
+    isHost = false;
+    myPlayerIndex = 0;
+
+    safeZone = new SafeZone();
+    projectiles = []; items = []; monsters = [];
+    let mapSeed = Math.floor(Math.random() * 999999) + 1;
+    obstacles = createObstaclesSeed(mapSeed);
+
+    let pad = 300;
+    player1 = new Player(pad, pad, false, "Player 1");
+    player1.color = '#2196F3';
+    players = [
+        player1,
+        new BotPlayer(WORLD_WIDTH - pad, pad, "Bot Alpha"),
+        new BotPlayer(pad, WORLD_HEIGHT - pad, "Bot Beta"),
+        new BotPlayer(WORLD_WIDTH - pad, WORLD_HEIGHT - pad, "Bot Gamma")
+    ];
+
+    gamePaused = false;
+    gameRunning = true;
+    showScreen('game');
+    document.getElementById('ping-indicator').classList.add('hidden');
+
+    monsterSpawnInterval = setInterval(() => {
+        if (monsters.length < 40 && player1 && !player1.isDead) {
+            let mx, my;
+            if (Math.random() < 0.5) { mx = Math.random()<0.5 ? camera.x-100 : camera.x+camera.width+100; my = camera.y+Math.random()*camera.height; }
+            else { mx = camera.x+Math.random()*camera.width; my = Math.random()<0.5 ? camera.y-100 : camera.y+camera.height+100; }
+            mx = Math.max(0, Math.min(WORLD_WIDTH, mx)); my = Math.max(0, Math.min(WORLD_HEIGHT, my));
+            monsters.push(new Monster(mx, my));
+        }
+    }, 1500);
+
+    requestAnimationFrame(gameLoop);
+}
+
+function startMultiplayerHostGame(mapSeed, totalPlayers, totalBots, playerInfos) {
+    cleanupGameState();
+    isMultiplayer = true;
+    isHost = true;
+    myPlayerIndex = 0;
+
+    safeZone = new SafeZone();
+    projectiles = []; items = []; monsters = [];
+    obstacles = createObstaclesSeed(mapSeed);
+
+    let pad = 300;
+    let spawnPositions = [
+        { x: pad, y: pad },
+        { x: WORLD_WIDTH - pad, y: pad },
+        { x: pad, y: WORLD_HEIGHT - pad },
+        { x: WORLD_WIDTH - pad, y: WORLD_HEIGHT - pad }
+    ];
+
+    players = [];
+    // Create human players
+    for (let i = 0; i < totalPlayers; i++) {
+        let sp = spawnPositions[i];
+        let p = new Player(sp.x, sp.y, false, playerInfos[i].name);
+        p.color = playerInfos[i].color;
+        if (i > 0) p.isRemote = true; // non-host human players are remote
+        players.push(p);
+    }
+    // Fill remaining with bots
+    let botNames = ['Bot Alpha', 'Bot Beta', 'Bot Gamma'];
+    for (let i = 0; i < totalBots; i++) {
+        let sp = spawnPositions[totalPlayers + i];
+        players.push(new BotPlayer(sp.x, sp.y, botNames[i] || ('Bot ' + (i+1))));
+    }
+
+    player1 = players[0]; // host's player
+    gamePaused = false;
+    gameRunning = true;
+    showScreen('game');
+    document.getElementById('ping-indicator').classList.remove('hidden');
+
+    // Handle input from clients
+    netManager.onInputReceived = (data, playerIdx) => {
+        if (playerIdx >= 0 && playerIdx < players.length && !players[playerIdx].isBot) {
+            let p = players[playerIdx];
+            p.remoteKeys = data.keys || {};
+            p.remoteMouse = data.mouse || { screenX: 0, screenY: 0, down: false };
+            p.remoteCameraX = data.cameraX || 0;
+            p.remoteCameraY = data.cameraY || 0;
+        }
+    };
+
+    netManager.startPing();
+
+    // Spawn monsters on host
+    monsterSpawnInterval = setInterval(() => {
+        if (monsters.length < 40 && player1 && !player1.isDead) {
+            let mx, my;
+            if (Math.random() < 0.5) { mx = Math.random()<0.5 ? camera.x-100 : camera.x+camera.width+100; my = camera.y+Math.random()*camera.height; }
+            else { mx = camera.x+Math.random()*camera.width; my = Math.random()<0.5 ? camera.y-100 : camera.y+camera.height+100; }
+            mx = Math.max(0, Math.min(WORLD_WIDTH, mx)); my = Math.max(0, Math.min(WORLD_HEIGHT, my));
+            monsters.push(new Monster(mx, my));
+        }
+    }, 1500);
+
+    // State broadcast interval (15 Hz — balanced between responsiveness and bandwidth)
+    let stateBroadcastInterval = setInterval(() => {
+        if (!gameRunning || !netManager) { clearInterval(stateBroadcastInterval); return; }
+        let state = serializeGameState();
+        netManager.broadcastState(state);
+    }, 66);
+
+    requestAnimationFrame(gameLoop);
+}
+
+function startMultiplayerClientGame(data) {
+    cleanupGameState();
+    isMultiplayer = true;
+    isHost = false;
+
+    safeZone = new SafeZone();
+    projectiles = []; items = []; monsters = [];
+    obstacles = createObstaclesSeed(data.mapSeed);
+
+    let pad = 300;
+    let spawnPositions = [
+        { x: pad, y: pad },
+        { x: WORLD_WIDTH - pad, y: pad },
+        { x: pad, y: WORLD_HEIGHT - pad },
+        { x: WORLD_WIDTH - pad, y: WORLD_HEIGHT - pad }
+    ];
+
+    players = [];
+    let pInfos = data.playerInfos || [];
+    for (let i = 0; i < data.totalPlayers; i++) {
+        let sp = spawnPositions[i];
+        let p = new Player(sp.x, sp.y, false, pInfos[i] ? pInfos[i].name : ('Player '+(i+1)));
+        p.color = pInfos[i] ? pInfos[i].color : PLAYER_COLORS[i];
+        players.push(p);
+    }
+    let botNames = ['Bot Alpha', 'Bot Beta', 'Bot Gamma'];
+    for (let i = 0; i < data.totalBots; i++) {
+        let sp = spawnPositions[data.totalPlayers + i];
+        players.push(new BotPlayer(sp.x, sp.y, botNames[i] || ('Bot '+(i+1))));
+    }
+
+    player1 = players[myPlayerIndex]; // my player
+    gamePaused = false;
+    gameRunning = true;
+    showScreen('game');
+    document.getElementById('ping-indicator').classList.remove('hidden');
+
+    // Handle state from host
+    netManager.onStateReceived = (state) => {
+        applyGameState(state);
+    };
+
+    // Send input to host at ~30 Hz
+    let inputSendInterval = setInterval(() => {
+        if (!gameRunning || !netManager) { clearInterval(inputSendInterval); return; }
+        netManager.sendInput({
+            type: 'input',
+            keys: { w: !!keys['w'], a: !!keys['a'], s: !!keys['s'], d: !!keys['d'], r: !!keys['r'], ' ': !!keys[' '] },
+            mouse: { screenX: mouse.screenX, screenY: mouse.screenY, down: mouse.down },
+            cameraX: camera.x,
+            cameraY: camera.y
+        });
+    }, 33);
+
+    requestAnimationFrame(clientGameLoop);
+}
+
+function cleanupGameState() {
+    gamePaused = false;
+    if (monsterSpawnInterval) { clearInterval(monsterSpawnInterval); monsterSpawnInterval = null; }
+    document.getElementById('game-over').style.display = 'none';
+    gameRunning = true;
+}
+
+// ================================================================
+// STATE SERIALIZATION (Host → Clients)
+// ================================================================
+function serializeGameState() {
+    return {
+        type: 'state',
+        players: players.map(p => ({
+            x: Math.round(p.x*10)/10, y: Math.round(p.y*10)/10,
+            hp: Math.round(p.hp*10)/10, maxHp: p.maxHp, isDead: p.isDead,
+            color: p.color, name: p.name, isBot: p.isBot,
+            ammo: p.ammo, maxAmmo: p.maxAmmo, isReloading: p.isReloading,
+            isDashing: p.isDashing, state: p.state || ''
+        })),
+        monsters: monsters.filter(m => !m.isDead).map(m => ({
+            x: Math.round(m.x*10)/10, y: Math.round(m.y*10)/10,
+            hp: Math.round(m.hp*10)/10, isDead: false
+        })),
+        projectiles: projectiles.filter(p => p.life > 5).slice(-60).map(p => ({
+            x: Math.round(p.x), y: Math.round(p.y),
+            vx: Math.round(p.vx*100)/100, vy: Math.round(p.vy*100)/100,
+            color: p.color, life: p.life
+        })),
+        items: items.filter(i => !i.isPicked).map(it => ({ x: Math.round(it.x), y: Math.round(it.y) })),
+        zone: { x: safeZone.x, y: safeZone.y, radius: Math.round(safeZone.radius*10)/10 },
+        gamePaused: gamePaused
+    };
+}
+
+// ================================================================
+// STATE APPLICATION (Client receives from Host)
+// ================================================================
+function applyGameState(state) {
+    if (!state || !state.players) return;
+
+    // Update players
+    state.players.forEach((sp, i) => {
+        if (i < players.length) {
+            let p = players[i];
+            if (i === myPlayerIndex) {
+                // LOCAL PLAYER: gentle correction only — client-side prediction is authoritative for feel
+                let errorX = sp.x - p.x, errorY = sp.y - p.y;
+                let errorDist = Math.hypot(errorX, errorY);
+                if (errorDist > 100) {
+                    // Too far off: snap to server position
+                    p.x = sp.x; p.y = sp.y;
+                } else if (errorDist > 3) {
+                    // Small drift: nudge gently
+                    p.x += errorX * 0.15;
+                    p.y += errorY * 0.15;
+                }
+                // Always sync non-position state from server
+                p.hp = sp.hp; p.maxHp = sp.maxHp; p.isDead = sp.isDead;
+                p.ammo = sp.ammo; p.maxAmmo = sp.maxAmmo; p.isReloading = sp.isReloading;
+            } else {
+                // REMOTE entities: smooth interpolation
+                p.x += (sp.x - p.x) * 0.3;
+                p.y += (sp.y - p.y) * 0.3;
+                p.hp = sp.hp; p.maxHp = sp.maxHp; p.isDead = sp.isDead;
+                p.ammo = sp.ammo; p.maxAmmo = sp.maxAmmo; p.isReloading = sp.isReloading;
+                p.isDashing = sp.isDashing;
+                if (sp.state) p.state = sp.state;
+            }
+        }
+    });
+
+    player1 = players[myPlayerIndex];
+
+    // Update monsters - reconcile count
+    while (monsters.length < state.monsters.length) monsters.push(new Monster(0, 0));
+    while (monsters.length > state.monsters.length) monsters.pop();
+    state.monsters.forEach((sm, i) => {
+        if (i < monsters.length) {
+            let m = monsters[i];
+            if (sm.isDead) { m.isDead = true; return; }
+            m.x += (sm.x - m.x) * 0.35;
+            m.y += (sm.y - m.y) * 0.35;
+            m.hp = sm.hp; m.isDead = sm.isDead;
+        }
+    });
+
+    // Update projectiles from server (merge, don't replace every frame)
+    projectiles = state.projectiles.map(sp => {
+        let p = new Projectile(sp.x, sp.y, sp.vx, sp.vy, null);
+        p.color = sp.color; p.life = sp.life;
+        return p;
+    });
+    // Clear client-side predicted projectiles when server state arrives (they're now in server list)
+    clientProjectiles = clientProjectiles.filter(cp => cp.life > 30); // keep only very recent ones
+
+    // Update items
+    items = state.items.map(si => new Item(si.x, si.y));
+
+    // Update safe zone
+    if (state.zone) {
+        safeZone.x = state.zone.x; safeZone.y = state.zone.y; safeZone.radius = state.zone.radius;
+    }
+
+    if (state.gamePaused && !gamePaused) {
+        gamePaused = true;
+    }
+}
+
+// ================================================================
+// GAME LOOP - SOLO & HOST
+// ================================================================
+function gameLoop() {
+    if (!gameRunning) return;
+    if (gamePaused) { requestAnimationFrame(gameLoop); return; }
+
+    let myPlayer = players[myPlayerIndex];
+
+    // Update camera
+    if (myPlayer && !myPlayer.isDead) {
+        camera.x = myPlayer.x - canvas.width/2; camera.y = myPlayer.y - canvas.height/2;
+        camera.x = Math.max(0, Math.min(WORLD_WIDTH-canvas.width, camera.x));
+        camera.y = Math.max(0, Math.min(WORLD_HEIGHT-canvas.height, camera.y));
+    }
+
+    // Update logic
+    safeZone.update();
+    players.forEach(p => {
+        if (p.isBot) p.updateAI(players, monsters, items, safeZone, projectiles, obstacles);
+        else p.update(keys, mouse, projectiles, safeZone, obstacles);
+    });
+
+    monsters = monsters.filter(m => !m.isDead);
+    monsters.forEach(m => m.update(players, monsters, obstacles));
+
+    items = items.filter(i => !i.isPicked);
+    items.forEach(item => {
+        players.forEach(p => {
+            if (!p.isDead && Math.hypot(p.x-item.x, p.y-item.y) < p.radius+item.radius) {
+                p.hp = Math.min(p.maxHp, p.hp + 30); item.isPicked = true;
+            }
+        });
+    });
+
+    projectiles = projectiles.filter(p => p.life > 0);
+    projectiles.forEach(proj => {
+        proj.update();
+        for (let obs of obstacles) { if (proj.x >= obs.x && proj.x <= obs.x+obs.w && proj.y >= obs.y && proj.y <= obs.y+obs.h) { proj.life = 0; break; } }
+        if (proj.life === 0) return;
+        monsters.forEach(m => {
+            if (Math.hypot(proj.x-m.x, proj.y-m.y) < m.radius+proj.radius) {
+                m.takeDamage(proj.damage); proj.life = 0;
+                if (proj.owner && proj.owner.isBot && proj.owner.brain) proj.owner.brain.recordDamageDealt(proj.damage);
+                if (m.isDead) {
+                    if (Math.random() < 0.25) items.push(new Item(m.x, m.y));
+                    if (proj.owner && proj.owner.isBot && proj.owner.brain) proj.owner.brain.recordKill();
+                }
+            }
+        });
+        players.forEach(p => {
+            if (p !== proj.owner && !p.isDead && !p.isDashing) {
+                if (Math.hypot(proj.x-p.x, proj.y-p.y) < p.radius+proj.radius) {
+                    p.takeDamage(proj.damage); proj.life = 0;
+                    if (proj.owner && proj.owner.isBot && proj.owner.brain) {
+                        proj.owner.brain.recordDamageDealt(proj.damage);
+                        proj.owner.brain.localKNN.hits++;
+                        if (p.isDead) {
+                            proj.owner.brain.recordKill();
+                            if (p.isBot && p.brain) {
+                                let dk = p.brain.getDeathKnowledge();
+                                KnowledgePool.addEvent('bot_death', { victim: p.name, killer: proj.owner.name });
+                                players.forEach(op => { if (op.isBot && !op.isDead && op !== proj.owner && op.brain) op.brain.absorbDeathKnowledge(dk); });
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    });
+
+    // Render
+    renderGame();
+
+    updateUI();
+    updateStatusPanel();
+    updateAlgoPanel();
+    checkWinCondition();
+
+    requestAnimationFrame(gameLoop);
+}
+
+// ================================================================
+// GAME LOOP - CLIENT (client-side prediction + render)
+// ================================================================
+function clientGameLoop() {
+    if (!gameRunning) return;
+
+    let myPlayer = players[myPlayerIndex];
+
+    // CLIENT-SIDE PREDICTION: run local movement immediately
+    if (myPlayer && !myPlayer.isDead) {
+        let now = Date.now();
+        if (myPlayer.isDashing) {
+            if (now - myPlayer.lastDash > myPlayer.dashTime) myPlayer.isDashing = false;
+            else {
+                myPlayer.x += myPlayer.dashTargetX * myPlayer.dashSpeed;
+                myPlayer.y += myPlayer.dashTargetY * myPlayer.dashSpeed;
+                myPlayer.resolveCollisions(obstacles);
+            }
+        }
+        if (!myPlayer.isDashing) {
+            let dx = 0, dy = 0;
+            if (keys['w']) dy -= 1; if (keys['s']) dy += 1;
+            if (keys['a']) dx -= 1; if (keys['d']) dx += 1;
+            if (dx !== 0 || dy !== 0) {
+                let len = Math.hypot(dx, dy); dx /= len; dy /= len;
+                myPlayer.x += dx * myPlayer.speed; myPlayer.y += dy * myPlayer.speed;
+            }
+            if (keys[' '] && now - myPlayer.lastDash > myPlayer.dashCooldown && (dx !== 0 || dy !== 0)) {
+                myPlayer.isDashing = true; myPlayer.lastDash = now;
+                myPlayer.dashTargetX = dx; myPlayer.dashTargetY = dy;
+            }
+            if (keys['r']) myPlayer.reload();
+            // Client-side shoot prediction (visual only)
+            if (mouse.down && now - myPlayer.lastShot > myPlayer.fireRate) {
+                if (myPlayer.ammo > 0 && !myPlayer.isReloading) {
+                    let worldMouseX = mouse.screenX + camera.x;
+                    let worldMouseY = mouse.screenY + camera.y;
+                    let angle = Math.atan2(worldMouseY - myPlayer.y, worldMouseX - myPlayer.x);
+                    angle += (Math.random() - 0.5) * 0.1;
+                    clientProjectiles.push(new Projectile(myPlayer.x, myPlayer.y, Math.cos(angle), Math.sin(angle), myPlayer));
+                    myPlayer.lastShot = now;
+                }
+            }
+            myPlayer.resolveCollisions(obstacles);
+        }
+
+        camera.x = myPlayer.x - canvas.width/2; camera.y = myPlayer.y - canvas.height/2;
+        camera.x = Math.max(0, Math.min(WORLD_WIDTH-canvas.width, camera.x));
+        camera.y = Math.max(0, Math.min(WORLD_HEIGHT-canvas.height, camera.y));
+    }
+
+    // Advance projectiles locally for smooth rendering
+    projectiles.forEach(proj => proj.update());
+    clientProjectiles = clientProjectiles.filter(p => p.life > 0);
+    clientProjectiles.forEach(proj => proj.update());
+
+    renderGame();
+    updateUI();
+    updateStatusPanel();
+
+    // Client-side win condition check (from received state)
+    if (gamePaused) {
+        checkWinCondition();
+    }
+
+    if (netManager && netManager.latency > 0) {
+        document.getElementById('ping-indicator').textContent = 'Ping: ' + netManager.latency + 'ms';
+    }
+
+    requestAnimationFrame(clientGameLoop);
+}
+
+// ================================================================
+// RENDERING
+// ================================================================
+function renderGame() {
+    ctx.fillStyle = '#1a1a1a'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.save(); ctx.translate(-camera.x, -camera.y);
+
+    // Grid
+    ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 1;
+    let startX = Math.floor(camera.x/50)*50, startY = Math.floor(camera.y/50)*50;
+    for (let i = startX; i < camera.x+canvas.width; i += 50) { ctx.beginPath(); ctx.moveTo(i, camera.y); ctx.lineTo(i, camera.y+canvas.height); ctx.stroke(); }
+    for (let i = startY; i < camera.y+canvas.height; i += 50) { ctx.beginPath(); ctx.moveTo(camera.x, i); ctx.lineTo(camera.x+canvas.width, i); ctx.stroke(); }
+
+    safeZone.draw(ctx);
+    obstacles.forEach(obs => obs.draw(ctx));
+    players.forEach(p => { if (!p.isDead) p.draw(ctx); });
+    monsters.forEach(m => { if (!m.isDead) m.draw(ctx); });
+    items.forEach(item => item.draw(ctx));
+    projectiles.forEach(proj => { if (proj.life > 0) proj.draw(ctx); });
+    clientProjectiles.forEach(proj => { if (proj.life > 0) proj.draw(ctx); });
+
+    ctx.restore();
+}
+
+// ================================================================
+// UI UPDATES
+// ================================================================
+function updateUI() {
+    let myPlayer = players[myPlayerIndex];
+    if (!myPlayer) return;
+    if (myPlayer.isDead) {
+        document.getElementById('hp-bar').style.width = '0%';
+    } else {
+        document.getElementById('hp-bar').style.width = (myPlayer.hp/myPlayer.maxHp*100)+'%';
+        let dashProgress = Math.min(1, (Date.now()-myPlayer.lastDash)/myPlayer.dashCooldown);
+        document.getElementById('dash-bar').style.width = (dashProgress*100)+'%';
+        if (myPlayer.isReloading) {
+            document.getElementById('ammo').innerText = 'Đang nạp đạn...';
+            document.getElementById('ammo').style.color = '#ff6666';
+        } else {
+            document.getElementById('ammo').innerText = `Đạn: ${myPlayer.ammo}/${myPlayer.maxAmmo}`;
+            document.getElementById('ammo').style.color = '#ffcc00';
+        }
+    }
+    document.getElementById('player-label').textContent = myPlayer.name + ' (Bạn - ' + myPlayer.color + ')';
+}
+
+let lastStatusUpdate = 0;
+function updateStatusPanel() {
+    let now = Date.now();
+    if (now - lastStatusUpdate < 100) return;
+    lastStatusUpdate = now;
+    let html = '<div class="stat-group">';
+    html += `<div class="stat-item"><span class="stat-label">Số quái vật:</span><span class="stat-value">${monsters.length}</span></div>`;
+    html += `<div class="stat-item"><span class="stat-label">Bán kính bo:</span><span class="stat-value">${safeZone ? Math.round(safeZone.radius) : '--'}m</span></div>`;
+    html += `<div class="stat-item"><span class="stat-label">Vật phẩm:</span><span class="stat-value">${items.length}</span></div>`;
+    if (isMultiplayer) {
+        html += `<div class="stat-item"><span class="stat-label">Chế độ:</span><span class="stat-value" style="color:#42a5f5">Online ${isHost?'(Host)':'(Client)'}</span></div>`;
+    }
+    html += '</div>';
+    html += '<div class="stat-group">';
+    html += `<h4 style="margin:0 0 5px 0;font-size:12px;color:#ffeb3b;text-transform:uppercase">Mô hình KNN (AI Predictor)</h4>`;
+    html += `<div class="stat-item"><span class="stat-label">Dataset:</span><span class="stat-value">${GlobalKNN.dataset.length}/${GlobalKNN.maxData}</span></div>`;
+    let isPredicting = (now - GlobalKNN.lastPredictTime < 500) ? "<span style='color:#00ff00'>Đang nội suy</span>" : "<span style='color:#aaa'>Chờ</span>";
+    html += `<div class="stat-item"><span class="stat-label">Trạng thái:</span><span class="stat-value">${isPredicting}</span></div>`;
+    html += '</div>';
+    html += '<div class="stat-group">';
+    players.forEach(p => {
+        let cssClass = p.isDead ? 'stat-item dead' : 'stat-item';
+        let hpText = p.isDead ? '0' : Math.round(p.hp);
+        let stateHtml = '';
+        if (p.isBot && !p.isDead && p.state) stateHtml = `<span class="badge state-${(p.state||'').toLowerCase()}">${p.state}</span>`;
+        let mpTag = (!p.isBot && isMultiplayer) ? ' 🌐' : '';
+        html += `<div class="${cssClass}"><span class="stat-label" style="color:${p.color}">${p.name}${mpTag} ${stateHtml}</span><span class="stat-value">${hpText}/${p.maxHp} HP</span></div>`;
+    });
+    html += '</div>';
+    document.getElementById('status-content').innerHTML = html;
+}
+
+let lastAlgoUpdate = 0;
+function updateAlgoPanel() {
+    let now = Date.now();
+    if (now - lastAlgoUpdate < 150) return;
+    lastAlgoUpdate = now;
+    let html = '';
+    html += `<div class="algo-row"><span>Global KNN Dataset:</span><span class="val">${GlobalKNN.dataset.length}/${GlobalKNN.maxData}</span></div>`;
+    html += `<div class="algo-row"><span>Knowledge Pool Events:</span><span class="val">${KnowledgePool.sharedEvents.length}</span></div>`;
+    html += '<hr style="border-color:#333;margin:6px 0">';
+    let bots = players.filter(p => p.isBot && p.brain);
+    bots.forEach(bot => {
+        let b = bot.brain;
+        let iqClass = b.iq >= 60 ? 'high-iq' : (b.iq >= 30 ? 'mid-iq' : 'low-iq');
+        let iqColor = b.iq >= 60 ? '#4CAF50' : (b.iq >= 30 ? '#ff9800' : '#f44336');
+        let aliveText = bot.isDead ? ' <span style="color:#f44336">[DEAD]</span>' : '';
+        html += `<div class="algo-bot-section ${iqClass}">`;
+        html += `<div style="font-weight:700;color:${bot.color};margin-bottom:4px">${bot.name}${aliveText}</div>`;
+        html += `<div class="algo-row"><span>IQ:</span><span class="val" style="color:${iqColor}">${b.iq.toFixed(1)} / 100</span></div>`;
+        html += `<div class="iq-bar-bg"><div class="iq-bar-fill" style="width:${b.iq}%;background:${iqColor}"></div></div>`;
+        html += `<div class="algo-row"><span>Local KNN Data:</span><span class="val">${b.localKNN.dataset.length}</span></div>`;
+        html += `<div class="algo-row"><span>Accuracy:</span><span class="val">${b.getAccuracy()}%</span></div>`;
+        html += `<div class="algo-row"><span>Kills:</span><span class="val">${b.kills}</span></div>`;
+        html += `<div class="algo-row"><span>Dmg Dealt:</span><span class="val">${Math.round(b.damageDealt)}</span></div>`;
+        html += `<div class="algo-row"><span>Shots Hit/Fired:</span><span class="val">${b.shotsHit}/${b.shotsFired}</span></div>`;
+        html += `<div class="algo-row"><span>Aim Spread:</span><span class="val">${(b.getAimSpread()*100).toFixed(1)}°</span></div>`;
+        html += `<div class="algo-row"><span>Fire Rate Mod:</span><span class="val">x${b.getFireRateMod().toFixed(2)}</span></div>`;
+        html += `<div class="algo-row"><span>Aggression:</span><span class="val">${(b.aggressionBias*100).toFixed(0)}%</span></div>`;
+        html += `<div class="algo-row"><span>Pref. Range:</span><span class="val">${Math.round(b.preferredRange)}px</span></div>`;
+        html += `<div class="algo-row"><span>Danger Zones:</span><span class="val">${b.tacticalMemory.length}</span></div>`;
+        html += `<div class="algo-row"><span>Survival:</span><span class="val">${b.getSurvivalMinutes()} min</span></div>`;
+        if (b.knowledgeLog.length > 0) {
+            html += '<div class="knowledge-log">';
+            b.knowledgeLog.slice(-5).reverse().forEach(log => {
+                let seconds = ((now-log.time)/1000).toFixed(0);
+                html += `<div><span style="color:#666">${seconds}s ago</span> ${log.msg}</div>`;
+            });
+            html += '</div>';
+        }
+        html += '</div>';
+    });
+    document.getElementById('algo-content').innerHTML = html;
+}
+
+let algoPanelVisible = true;
+function toggleAlgoPanel() {
+    algoPanelVisible = !algoPanelVisible;
+    let panel = document.getElementById('algo-panel');
+    let btn = document.getElementById('algo-toggle');
+    if (algoPanelVisible) { panel.classList.remove('hidden'); btn.textContent = '🧠 Intelligence ▼'; }
+    else { panel.classList.add('hidden'); btn.textContent = '🧠 Intelligence ▶'; }
+}
+
+function checkWinCondition() {
+    if (gamePaused) return;
+    let myPlayer = players[myPlayerIndex];
+    let alive = players.filter(p => !p.isDead);
+    if (myPlayer && myPlayer.isDead) {
+        gamePaused = true;
+        document.getElementById('game-over').style.display = 'flex';
+        document.getElementById('go-title').innerText = 'BẠN ĐÃ CHẾT!';
+        document.getElementById('go-title').style.color = 'red';
+        document.getElementById('go-desc').innerText = `Còn ${alive.length} người sống sót.`;
+        return;
+    }
+    if (alive.length === 1 && myPlayer && alive[0] === myPlayer) {
+        gamePaused = true;
+        document.getElementById('game-over').style.display = 'flex';
+        document.getElementById('go-title').innerText = 'TOP 1 SURVIVAL!';
+        document.getElementById('go-title').style.color = '#FFD700';
+        document.getElementById('go-desc').innerText = isMultiplayer ? 'Bạn là người chiến thắng! (Online)' : 'Bạn là người chiến thắng!';
+    }
+}
+
+// ================================================================
+// START - Show menu
+// ================================================================
+showScreen('menu');
+</script>
+</body>
+</html>
