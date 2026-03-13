@@ -118,6 +118,9 @@
         .ai-doc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .ai-doc-card { background: rgba(255,255,255,0.04); border: 1px solid #2f3b58; border-radius: 8px; padding: 10px; }
         .ai-doc-card b { color: #ffeb3b; }
+        .ai-doc-flow { margin-top: 10px; padding: 10px; border: 1px solid #2f3b58; border-radius: 8px; background: rgba(255,255,255,0.03); }
+        .ai-doc-flow h4 { margin: 0 0 6px 0; color: #ffd54f; font-size: 13px; }
+        .ai-doc-flow code { color: #9be7ff; }
         .ai-doc-live { margin-top: 8px; font-size: 12px; color: #9bb3db; }
         .ai-metric { margin-top: 6px; }
         .ai-metric label { display: flex; justify-content: space-between; color: #c8d8f7; font-size: 12px; }
@@ -214,22 +217,33 @@
 <div id="ai-doc-modal">
     <div class="ai-doc-box">
         <h3>📘 State Tree + Online KNN</h3>
-        <p><b>Lớp 1 (State Tree):</b> Bot chọn nhóm hành vi cấp cao theo tình hình trận đấu.</p>
-        <ul>
-            <li><b>Combat:</b> Ưu tiên giao tranh khi đủ máu/đạn và có line-of-sight.</li>
-            <li><b>Survival:</b> Rút lui, né nguy hiểm, chạy về safe zone khi bị áp lực cao.</li>
-            <li><b>Resource:</b> Tìm item khi thiếu máu hoặc thiếu tài nguyên.</li>
-            <li><b>Explore:</b> Di chuyển thăm dò khi không có mục tiêu rõ ràng.</li>
-            <li><b>SafeZone:</b> Ưu tiên quay lại vùng an toàn nếu gần/ra ngoài bo.</li>
-        </ul>
-        <p><b>Lớp 2 (Tactical policy):</b> Mỗi nhánh chọn chiến thuật cụ thể theo ngữ cảnh.</p>
-        <ul>
-            <li>Combat: aggressive attack, kite, strafe, ambush, retreat fire.</li>
-            <li>Survival: dash escape, reposition by zone, avoid danger memory.</li>
-            <li>Resource: loot near/far, risk-aware pickup.</li>
-            <li>Explore: patrol/wander tránh khu vực nguy hiểm đã học.</li>
-        </ul>
-        <p><b>Lớp 3 (Online Learning):</b> Sau mỗi vài giây hoặc mỗi pha combat, bot ghi nhận kết quả để cập nhật score và mẫu KNN cục bộ theo thời gian thực.</p>
+        <p><b>Tóm tắt dễ hiểu:</b> AI chạy theo 3 bước lặp liên tục: <b>Nhìn trạng thái</b> → <b>Chọn nhánh hành vi</b> → <b>Học từ kết quả</b>.</p>
+        <div class="ai-doc-flow">
+            <h4>1) State Tree quyết định cấp cao (macro)</h4>
+            <ul>
+                <li><b>Combat:</b> đủ điều kiện giao tranh.</li>
+                <li><b>Survival:</b> máu thấp, bị vây, cần rút lui.</li>
+                <li><b>Resource:</b> ưu tiên nhặt tài nguyên.</li>
+                <li><b>Explore:</b> tuần tra khi ít mục tiêu.</li>
+                <li><b>SafeZone:</b> gần/ngoài bo thì <b>ưu tiên số 1</b> quay về vùng an toàn.</li>
+            </ul>
+            <p>Điểm nhánh được tính từ ngữ cảnh hiện tại: HP, khoảng cách địch, số địch gần, khoảng cách item, áp lực bo.</p>
+        </div>
+        <div class="ai-doc-flow">
+            <h4>2) Tactical policy trong từng nhánh</h4>
+            <ul>
+                <li><b>Combat:</b> aggressive attack, kite, strafe, ambush, retreat fire.</li>
+                <li><b>Survival:</b> dash escape, reposition theo bo.</li>
+                <li><b>Resource/Explore:</b> loot route, patrol, tránh điểm nguy hiểm.</li>
+            </ul>
+        </div>
+        <div class="ai-doc-flow">
+            <h4>3) Online KNN học thời gian thực</h4>
+            <p><b>Dữ liệu thu thập mỗi pha bắn:</b> <code>[distance_to_target, target_hp, is_chased]</code> + nhãn hướng bắn <code>[dirX, dirY]</code>.</p>
+            <p><b>Cách tính:</b> tìm K mẫu gần nhất (k=3), lấy trung bình hướng để dự đoán hướng di chuyển mục tiêu.</p>
+            <p><b>Trọng số khoảng cách:</b> distance*0.5, targetHp*2.0, isChased*50 (nhấn mạnh ngữ cảnh bị truy đuổi).</p>
+            <p><b>Cập nhật học:</b> mỗi ~2.5s/pulse, hệ thống ghi nhận accuracy, số mẫu KNN, score nhánh để điều chỉnh hành vi vòng sau.</p>
+        </div>
         <div class="ai-doc-live">Realtime mỗi ~250ms trong khi cửa sổ đang mở.</div>
         <div class="ai-doc-grid" id="ai-doc-stats"></div>
         <button class="game-btn ai-doc-close" onclick="toggleAIDocModal(false)">Đóng (P)</button>
