@@ -229,9 +229,6 @@
 // ================================================================
 // GLOBAL STATE
 // ================================================================
-let wave = 1;
-let zombiesRemaining = 0;
-let nextWaveTimer = 0;
 let currentScreen = 'menu'; // 'menu' | 'lobby' | 'game'
 let isMultiplayer = false;
 let isHost = false;
@@ -411,59 +408,11 @@ const KnowledgePool = {
 // GAME ENTITY CLASSES
 // ================================================================
 class Obstacle {
-    constructor(x, y, w, h) { this.x = x; this.y = y; this.w = w; this.h = h;
-        this.type = Math.floor(Math.random() * 3);
-     }
+    constructor(x, y, w, h) { this.x = x; this.y = y; this.w = w; this.h = h; }
     draw(ctx) {
-    ctx.save();
-    let type = this.type;
-
-    // ===== TƯỜNG =====
-        if(type == 0){
-
-        ctx.fillStyle = "#8b8b8b";
-        ctx.fillRect(this.x, this.y, this.w, this.h);
-
-        ctx.strokeStyle = "#555";
-        ctx.strokeRect(this.x, this.y, this.w, this.h);
-
-        ctx.beginPath();
-        ctx.moveTo(this.x, this.y + this.h/2);
-        ctx.lineTo(this.x + this.w, this.y + this.h/2);
-        ctx.stroke();
-        }
-
-  // ===== CÂY =====
-        else if(type == 1){
-
-            // thân cây
-        ctx.fillStyle = "#6b4f2a";
-        ctx.fillRect(this.x + this.w/2 - 3, this.y + this.h/2, 6, this.h/2);
-
-        // tán cây
-        ctx.beginPath();
-        ctx.arc(this.x + this.w/2, this.y + this.h/2, this.w/2, 0, Math.PI*2);
-        ctx.fillStyle = "green";
-        ctx.fill();
-        }
-
-  // ===== ĐỐNG ĐÁ =====
-        else{
-        ctx.fillStyle = "#7a7a7a";
-
-        ctx.beginPath();
-        ctx.arc(this.x + this.w*0.3, this.y + this.h*0.6, this.w*0.25, 0, Math.PI*2);
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(this.x + this.w*0.7, this.y + this.h*0.6, this.w*0.25, 0, Math.PI*2);
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.arc(this.x + this.w*0.5, this.y + this.h*0.3, this.w*0.3, 0, Math.PI*2);
-        ctx.fill();
-        }
-        ctx.restore();
+        ctx.fillStyle = '#444'; ctx.fillRect(this.x, this.y, this.w, this.h);
+        ctx.fillStyle = '#222'; ctx.fillRect(this.x, this.y + this.h - 5, this.w, 5); ctx.fillRect(this.x + this.w - 5, this.y, 5, this.h);
+        ctx.strokeStyle = '#111'; ctx.lineWidth = 2; ctx.strokeRect(this.x, this.y, this.w, this.h);
     }
 }
 
@@ -483,33 +432,11 @@ class SafeZone {
 class Entity {
     constructor(x, y, radius, color, hp, name = "Entity") {
         this.x = x; this.y = y; this.radius = radius; this.color = color;
-        this.maxHp = hp; this.hp = hp; this.speed = 2.5; this.isDead = false; this.name = name;
+        this.maxHp = hp; this.hp = hp; this.speed = 1.8; this.isDead = false; this.name = name;
     }
-    // Hoạt ảnh người chơi
     draw(ctx) {
-    let bounce = Math.sin(Date.now() * 0.01) * 2;
-    ctx.save();
-    let x = this.x;
-    let y = this.y + bounce;
-
-    // đầu
-    ctx.beginPath();
-    ctx.arc(x, y - 10, 6, 0, Math.PI * 2);
-    ctx.fillStyle = "#f1c27d";
-    ctx.fill();
-
-    // thân
-    ctx.fillStyle = "#2a6df2";
-    ctx.fillRect(x - 5, y - 4, 10, 12);
-    // tay trái
-    ctx.fillRect(x - 9, y - 2, 4, 2);
-    // tay phải
-    ctx.fillRect(x + 5, y - 2, 4, 2);
-    // chân trái
-    ctx.fillRect(x - 4, y + 8, 3, 6);
-    // chân phải
-    ctx.fillRect(x + 1, y + 8, 3, 6);
-    ctx.restore();
+        ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+        ctx.fillStyle = this.color; ctx.fill();
         ctx.strokeStyle = '#000'; ctx.lineWidth = 2; ctx.stroke();
         if (this.hp < this.maxHp && !this.isDead) {
             ctx.fillStyle = 'red'; ctx.fillRect(this.x-15, this.y-this.radius-12, 30, 4);
@@ -534,7 +461,7 @@ class Player extends Entity {
     constructor(x, y, isBot = false, name = "Player") {
         super(x, y, 15, isBot ? '#4CAF50' : '#2196F3', 100, name);
         this.isBot = isBot; this.isRemote = false;
-        this.ammo = 30; this.maxAmmo = 30; this.lastShot = 0; this.fireRate = 300;
+        this.ammo = 30; this.maxAmmo = 30; this.lastShot = 0; this.fireRate = 500;
         this.isReloading = false; this.reloadTime = 1500;
         this.isDashing = false; this.dashCooldown = 2000; this.lastDash = 0;
         this.dashSpeed = 9; this.dashTime = 200; this.dashTargetX = 0; this.dashTargetY = 0;
@@ -728,10 +655,10 @@ class Monster extends Entity {
         for (let m of monsters) { if (m===this||m.isDead) continue; let d = Math.hypot(this.x-m.x,this.y-m.y); if (d<25) { moveX -= (m.x-this.x); moveY -= (m.y-this.y); } }
         let moveLen = Math.hypot(moveX, moveY);
         if (moveLen > 0) { this.x += (moveX/moveLen)*this.speed; this.y += (moveY/moveLen)*this.speed; }
-        this.resolveCollisions(obstacles);
+        this.resolveCollisions(obstacles); 
     }
-    // Hoạt ảnh zombie
-        draw(ctx) {
+
+            draw(ctx) {
 
         let wobble = Math.sin(Date.now() * 0.008) * 3;
 
@@ -769,33 +696,10 @@ class Monster extends Entity {
     }
     
 }
-    function spawnWave() {
-
-    let zombieCount = 4 + wave * 2
-    for(let i=0;i<zombieCount;i++) {
-    let x = Math.random() * mapWidth
-    let y = Math.random() * mapHeight
-    monsters.push(new Monster(x,y))
-   }
-    zombiesRemaining = zombieCount
-    zombiesRemaining--;
-     if(zombiesRemaining <= 0) {
-
-            if(waveCooldown <= 0){
-            
-            wave++
-            waveCooldown = 300
-            spawnWave()
-
-            }
-        }
-
- waveCooldown--
-}
 
 class Projectile {
     constructor(x, y, vx, vy, owner) {
-        this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.speed = 10;
+        this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.speed = 20;
         this.radius = 3; this.owner = owner; this.damage = 15; this.life = 150; this.color = '#ffff00';
         this.ownerIndex = -1; // for multiplayer serialization
     }
@@ -1618,11 +1522,6 @@ function renderGame() {
     clientProjectiles.forEach(proj => { if (proj.life > 0) proj.draw(ctx); });
 
     ctx.restore();
-    
-    // ===== UI =====
-    ctx.fillStyle = "#00ffcc";
-    ctx.font = "bold 20px Arial";
-    ctx.fillText("WAVE " + wave, 20, 80);
 }
 
 // ================================================================
@@ -1752,7 +1651,6 @@ function checkWinCondition() {
         document.getElementById('go-desc').innerText = isMultiplayer ? 'Bạn là người chiến thắng! (Online)' : 'Bạn là người chiến thắng!';
     }
 }
-
 
 // ================================================================
 // START - Show menu
