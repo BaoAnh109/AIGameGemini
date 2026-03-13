@@ -102,6 +102,7 @@
         .badge.state-survival { background: #ff9800; color: white; }
         .badge.state-resource { background: #9c27b0; color: white; }
         .badge.state-explore { background: #607d8b; color: white; }
+        .badge.state-safezone { background: #00bcd4; color: white; }
 
         #ai-doc-modal {
             position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
@@ -117,6 +118,11 @@
         .ai-doc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
         .ai-doc-card { background: rgba(255,255,255,0.04); border: 1px solid #2f3b58; border-radius: 8px; padding: 10px; }
         .ai-doc-card b { color: #ffeb3b; }
+        .ai-doc-live { margin-top: 8px; font-size: 12px; color: #9bb3db; }
+        .ai-metric { margin-top: 6px; }
+        .ai-metric label { display: flex; justify-content: space-between; color: #c8d8f7; font-size: 12px; }
+        .ai-metric .bar { width: 100%; height: 6px; background: #1c2943; border-radius: 999px; overflow: hidden; }
+        .ai-metric .fill { height: 100%; background: linear-gradient(90deg, #42a5f5, #7ecfff); }
         .ai-doc-close { margin-top: 12px; }
 
         /* Multiplayer ping indicator */
@@ -214,6 +220,7 @@
             <li><b>Survival:</b> Rút lui, né nguy hiểm, chạy về safe zone khi bị áp lực cao.</li>
             <li><b>Resource:</b> Tìm item khi thiếu máu hoặc thiếu tài nguyên.</li>
             <li><b>Explore:</b> Di chuyển thăm dò khi không có mục tiêu rõ ràng.</li>
+            <li><b>SafeZone:</b> Ưu tiên quay lại vùng an toàn nếu gần/ra ngoài bo.</li>
         </ul>
         <p><b>Lớp 2 (Tactical policy):</b> Mỗi nhánh chọn chiến thuật cụ thể theo ngữ cảnh.</p>
         <ul>
@@ -223,6 +230,7 @@
             <li>Explore: patrol/wander tránh khu vực nguy hiểm đã học.</li>
         </ul>
         <p><b>Lớp 3 (Online Learning):</b> Sau mỗi vài giây hoặc mỗi pha combat, bot ghi nhận kết quả để cập nhật score và mẫu KNN cục bộ theo thời gian thực.</p>
+        <div class="ai-doc-live">Realtime mỗi ~250ms trong khi cửa sổ đang mở.</div>
         <div class="ai-doc-grid" id="ai-doc-stats"></div>
         <button class="game-btn ai-doc-close" onclick="toggleAIDocModal(false)">Đóng (P)</button>
     </div>
@@ -334,9 +342,11 @@ class BotBrain {
         this.learnCooldown = 0; this.tacticalMemory = []; this.maxTactical = 30;
         this.preferredRange = 280; this.aggressionBias = 0.5; this.fleeThreshold = 0.3;
         this.currentMacroState = 'EXPLORE'; this.currentTactic = 'patrol';
-        this.stateTreeScores = { COMBAT: 0, SURVIVAL: 0, RESOURCE: 0, EXPLORE: 0 };
+        this.stateTreeScores = { COMBAT: 0, SURVIVAL: 0, RESOURCE: 0, EXPLORE: 0, SAFEZONE: 0 };
         this.combatPhaseShots = 0; this.combatPhaseHits = 0;
         this.lastLearningPulse = Date.now();
+        this.learningUpdates = 0; this.lastPulseAccuracy = 0;
+        this.contextSnapshot = { hpRatio: 1, zoneDist: 0, zoneRadius: 1, threatDist: 9999 };
     }
     recordCombatExperience(dist, targetHp, myHp, dirX, dirY, success) {
         this.localKNN.record(dist, targetHp, myHp < 40, dirX, dirY);
@@ -368,6 +378,8 @@ class BotBrain {
         if (this.combatPhaseShots >= 2) {
             this.stateTreeScores.COMBAT += acc > 0.35 ? 1 : -0.5;
             this.stateTreeScores.SURVIVAL += acc < 0.2 ? 0.5 : 0;
+            this.lastPulseAccuracy = acc;
+            this.learningUpdates++;
             this.addLog(`Online update: acc=${(acc*100).toFixed(0)}%, KNN=${this.localKNN.dataset.length}`);
         }
         this.combatPhaseShots = 0; this.combatPhaseHits = 0;
@@ -400,7 +412,8 @@ class BotBrain {
             preferredRange: this.preferredRange,
             aggressionBias: this.aggressionBias,
             iq: this.iq,
-            scores: { ...this.stateTreeScores }
+            scores: { ...this.stateTreeScores },
+            learningUpdates: this.learningUpdates
         };
     }
     absorbDeathKnowledge(knowledge) {
@@ -409,6 +422,7 @@ class BotBrain {
         if (knowledge.scores) {
             Object.keys(this.stateTreeScores).forEach(k => this.stateTreeScores[k] += (knowledge.scores[k] || 0) * 0.1);
         }
+        this.learningUpdates += knowledge.learningUpdates ? Math.min(knowledge.learningUpdates, 3) : 0;
         let bonus = Math.min(3, knowledge.iq * 0.05);
         this.iq = Math.min(100, this.iq + bonus);
         this.addLog(`Kế thừa tri thức bot chết (+${bonus.toFixed(1)} IQ)`);
@@ -421,6 +435,7 @@ class BotBrain {
         c.SURVIVAL = (context.hpRatio < this.fleeThreshold ? 4 : 0) + (context.nearbyThreats > 2 ? 2 : 0) + (context.zonePressure ? 2 : 0);
         c.RESOURCE = (context.itemDist < 450 ? 2 : 0) + (context.hpRatio < 0.8 ? 1 : 0);
         c.EXPLORE = 1 + (context.threatDist > 650 ? 1.5 : 0);
+        c.SAFEZONE = (context.outsideZone ? 8 : 0) + (context.zonePressure ? 4 : 0);
         let best = Object.entries(c).sort((a, b) => b[1] - a[1])[0];
         this.currentMacroState = best ? best[0] : 'EXPLORE';
         return this.currentMacroState;
@@ -618,13 +633,25 @@ class BotPlayer extends Player {
             nearbyThreats,
             itemDist: closestItem ? closestItem.dist : 9999,
             attackRange: smartAttackRange,
-            zonePressure: distToZone > zone.radius - 70
+            zonePressure: distToZone > zone.radius - 90,
+            outsideZone: distToZone > zone.radius - 10,
+            zoneDist: distToZone,
+            zoneRadius: zone.radius
         };
 
+        this.brain.contextSnapshot = { hpRatio: context.hpRatio, zoneDist: context.zoneDist, zoneRadius: context.zoneRadius, threatDist: context.threatDist };
         let macro = this.brain.chooseMacroState(context);
+        if (context.outsideZone) macro = 'SAFEZONE';
         this.state = macro;
 
-        if (macro === 'SURVIVAL') {
+        if (macro === 'SAFEZONE') {
+            this.brain.currentTactic = 'zone return';
+            this.moveTo(zone.x, zone.y);
+            if (now - this.lastDash > this.dashCooldown) {
+                let zx = zone.x - this.x, zy = zone.y - this.y;
+                this.triggerDash(zx, zy);
+            }
+        } else if (macro === 'SURVIVAL') {
             this.brain.currentTactic = 'dash escape';
             if (closestItem && closestItem.dist < 320 && this.hp < 70) {
                 this.brain.currentTactic = 'resource fallback';
@@ -701,7 +728,7 @@ class BotPlayer extends Player {
     moveTo(tx, ty) { let dx = tx-this.x, dy = ty-this.y, len = Math.hypot(dx,dy); if (len>0) { this.x += (dx/len)*this.speed*0.8; this.y += (dy/len)*this.speed*0.8; } }
     moveDir(dx, dy) { let len = Math.hypot(dx,dy); if (len>0) { this.x += (dx/len)*this.speed*0.8; this.y += (dy/len)*this.speed*0.8; } }
     wander() { if (Date.now()-this.stateTimer>2000) { this.wanderAngle = Math.random()*Math.PI*2; this.stateTimer = Date.now(); } this.x += Math.cos(this.wanderAngle)*this.speed*0.5; this.y += Math.sin(this.wanderAngle)*this.speed*0.5; }
-    triggerDash(dx, dy) { this.isDashing = true; this.lastDash = Date.now(); let len = Math.hypot(dx,dy); this.dashTargetX = dx/len; this.dashTargetY = dy/len; }
+    triggerDash(dx, dy) { let len = Math.hypot(dx,dy); if (len === 0) return; this.isDashing = true; this.lastDash = Date.now(); this.dashTargetX = dx/len; this.dashTargetY = dy/len; }
 }
 
 class Monster extends Entity {
@@ -1494,6 +1521,7 @@ function gameLoop() {
 
     updateUI();
     updateStatusPanel();
+    updateAIDocRealtime();
     checkWinCondition();
 
     requestAnimationFrame(gameLoop);
@@ -1558,6 +1586,7 @@ function clientGameLoop() {
     renderGame();
     updateUI();
     updateStatusPanel();
+    updateAIDocRealtime();
 
     // Client-side win condition check (from received state)
     if (gamePaused) {
@@ -1656,14 +1685,31 @@ function buildAIDocStats() {
     let html = '';
     bots.forEach(bot => {
         let b = bot.brain;
+        let hpPct = Math.max(0, Math.min(100, (bot.hp / bot.maxHp) * 100));
+        let zonePct = Math.max(0, Math.min(100, ((b.contextSnapshot.zoneRadius - b.contextSnapshot.zoneDist) / Math.max(1, b.contextSnapshot.zoneRadius)) * 100));
+        let pulseAge = ((Date.now() - b.lastLearningPulse) / 1000).toFixed(1);
         html += `<div class="ai-doc-card"><div><b>${bot.name}</b> (${bot.isDead ? 'dead' : 'alive'})</div>`;
         html += `<div>Macro State: ${b.currentMacroState}</div>`;
         html += `<div>Tactic: ${b.currentTactic}</div>`;
         html += `<div>Online KNN: ${b.localKNN.dataset.length} mẫu | Accuracy: ${b.getAccuracy()}%</div>`;
-        html += `<div>Scores: C=${b.stateTreeScores.COMBAT.toFixed(1)}, S=${b.stateTreeScores.SURVIVAL.toFixed(1)}, R=${b.stateTreeScores.RESOURCE.toFixed(1)}, E=${b.stateTreeScores.EXPLORE.toFixed(1)}</div></div>`;
+        html += `<div>Learning pulse: ${b.learningUpdates} lần | gần nhất ${pulseAge}s | acc=${(b.lastPulseAccuracy*100).toFixed(0)}%</div>`;
+        html += `<div>Scores: C=${b.stateTreeScores.COMBAT.toFixed(1)}, S=${b.stateTreeScores.SURVIVAL.toFixed(1)}, R=${b.stateTreeScores.RESOURCE.toFixed(1)}, E=${b.stateTreeScores.EXPLORE.toFixed(1)}, Z=${b.stateTreeScores.SAFEZONE.toFixed(1)}</div>`;
+        html += `<div class="ai-metric"><label><span>HP</span><span>${hpPct.toFixed(0)}%</span></label><div class="bar"><div class="fill" style="width:${hpPct}%"></div></div></div>`;
+        html += `<div class="ai-metric"><label><span>Safe Zone Margin</span><span>${zonePct.toFixed(0)}%</span></label><div class="bar"><div class="fill" style="width:${zonePct}%"></div></div></div>`;
+        html += `<div class="ai-metric"><label><span>KNN Hit Ratio (phase)</span><span>${b.combatPhaseHits}/${b.combatPhaseShots}</span></label><div class="bar"><div class="fill" style="width:${Math.min(100, b.combatPhaseShots ? (b.combatPhaseHits/b.combatPhaseShots*100) : 0)}%"></div></div></div>`;
+        html += `</div>`;
     });
     if (!html) html = '<div class="ai-doc-card">Chưa có dữ liệu bot.</div>';
     document.getElementById('ai-doc-stats').innerHTML = html;
+}
+
+let lastAIDocUpdate = 0;
+function updateAIDocRealtime() {
+    if (!aiDocVisible) return;
+    let now = Date.now();
+    if (now - lastAIDocUpdate < 250) return;
+    lastAIDocUpdate = now;
+    buildAIDocStats();
 }
 
 function toggleAIDocModal(forceState) {
@@ -1671,6 +1717,7 @@ function toggleAIDocModal(forceState) {
     let modal = document.getElementById('ai-doc-modal');
     if (!modal) return;
     if (aiDocVisible) {
+        lastAIDocUpdate = 0;
         buildAIDocStats();
         modal.classList.add('show');
     } else {
