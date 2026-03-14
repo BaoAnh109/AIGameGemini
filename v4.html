@@ -198,7 +198,7 @@
     </div>
 
     <div id="info">
-        <b>Hướng dẫn:</b> WASD di chuyển | Chuột trái bắn | SPACE lướt (Dash) | R nạp đạn<br>
+        <b>Hướng dẫn:</b> WASD di chuyển | Chuột trái bắn | SPACE lướt (Dash) | R nạp đạn | O bật/tắt đường A* của quái<br>
         <i>Bản đồ 3000x3000. AI có Line of Sight. Nấp sau khối bê tông để né đạn.</i>
     </div>
 
@@ -354,11 +354,32 @@ const Pathfinding = {
         if (cx < 0 || cy < 0 || cx >= this.cols || cy >= this.rows) return false;
         return !this.blocked[this.idx(cx, cy)];
     },
+    findNearestWalkable(cx, cy, maxRadius = 6) {
+        if (this.walkable(cx, cy)) return { cx, cy };
+        for (let r = 1; r <= maxRadius; r++) {
+            for (let y = cy - r; y <= cy + r; y++) {
+                for (let x = cx - r; x <= cx + r; x++) {
+                    if (Math.abs(x - cx) !== r && Math.abs(y - cy) !== r) continue;
+                    if (this.walkable(x, y)) return { cx: x, cy: y };
+                }
+            }
+        }
+        return null;
+    },
     heuristic(ax, ay, bx, by) { return Math.abs(ax - bx) + Math.abs(ay - by); },
     findPath(sx, sy, tx, ty, obstacles, maxSteps = 1800) {
         this.build(obstacles);
         let s = this.toCell(sx, sy), t = this.toCell(tx, ty);
-        if (!this.walkable(s.cx, s.cy) || !this.walkable(t.cx, t.cy)) return [];
+        if (!this.walkable(s.cx, s.cy)) {
+            let sn = this.findNearestWalkable(s.cx, s.cy, 4);
+            if (!sn) return [];
+            s = sn;
+        }
+        if (!this.walkable(t.cx, t.cy)) {
+            let tn = this.findNearestWalkable(t.cx, t.cy, 8);
+            if (!tn) return [];
+            t = tn;
+        }
         let open = [{ cx: s.cx, cy: s.cy, g: 0, f: this.heuristic(s.cx, s.cy, t.cx, t.cy), parent: null }];
         let closed = new Set();
         let best = new Map();
@@ -908,6 +929,10 @@ class Monster extends Entity {
                 if (nextWp) {
                     let dx = nextWp.x-this.x, dy = nextWp.y-this.y, len = Math.hypot(dx,dy) || 1;
                     this.x += (dx/len)*this.speed; this.y += (dy/len)*this.speed;
+                } else {
+                    // fallback tránh đứng im khi target rơi vào cell không đi được
+                    let dx = target.x-this.x, dy = target.y-this.y, len = Math.hypot(dx,dy) || 1;
+                    this.x += (dx/len)*this.speed*0.7; this.y += (dy/len)*this.speed*0.7;
                 }
             }
         }
@@ -983,6 +1008,7 @@ window.addEventListener('keydown', e => {
     let key = e.key.toLowerCase();
     keys[key] = true;
     if (currentScreen === 'game' && key === 'p') toggleAIDocModal();
+    if (currentScreen === 'game' && key === 'o') showMonsterPaths = !showMonsterPaths;
 });
 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 window.addEventListener('mousemove', e => { mouse.screenX = e.clientX; mouse.screenY = e.clientY; });
@@ -996,6 +1022,7 @@ let safeZone, projectiles, items, monsters, obstacles, players, player1;
 let clientProjectiles = []; // client-side predicted projectiles (visual only)
 let gamePaused = false;
 let monsterSpawnInterval = null;
+let showMonsterPaths = false;
 
 // ================================================================
 // OBSTACLE GENERATION (deterministic with seed for multiplayer sync)
@@ -1779,6 +1806,29 @@ function renderGame() {
     obstacles.forEach(obs => obs.draw(ctx));
     players.forEach(p => { if (!p.isDead) p.draw(ctx); });
     monsters.forEach(m => { if (!m.isDead) m.draw(ctx); });
+
+    if (showMonsterPaths) {
+        monsters.forEach(m => {
+            if (m.isDead || !m.pathCache || !m.pathCache.waypoints || m.pathCache.waypoints.length < 2) return;
+            ctx.beginPath();
+            ctx.moveTo(m.x, m.y);
+            for (let i = m.pathCache.idx || 0; i < m.pathCache.waypoints.length; i++) {
+                let wp = m.pathCache.waypoints[i];
+                ctx.lineTo(wp.x, wp.y);
+            }
+            ctx.strokeStyle = 'rgba(255, 80, 80, 0.95)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            let tw = m.pathCache.waypoints[m.pathCache.waypoints.length - 1];
+            if (tw) {
+                ctx.beginPath();
+                ctx.arc(tw.x, tw.y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = '#ff5252';
+                ctx.fill();
+            }
+        });
+    }
     items.forEach(item => item.draw(ctx));
     projectiles.forEach(proj => { if (proj.life > 0) proj.draw(ctx); });
     clientProjectiles.forEach(proj => { if (proj.life > 0) proj.draw(ctx); });
