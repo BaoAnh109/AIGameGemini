@@ -230,18 +230,18 @@
             <p>Điểm nhánh được tính từ ngữ cảnh hiện tại: HP, khoảng cách địch, số địch gần, khoảng cách item, áp lực bo.</p>
         </div>
         <div class="ai-doc-flow">
-            <h4>2) Tactical policy trong từng nhánh</h4>
+            <h4>2) Micro tactic (Decision Tree) + di chuyển A*</h4>
             <ul>
-                <li><b>Combat:</b> aggressive attack, kite, strafe, ambush, retreat fire.</li>
-                <li><b>Survival:</b> dash escape, reposition theo bo.</li>
-                <li><b>Resource/Explore:</b> loot route, patrol, tránh điểm nguy hiểm.</li>
+                <li><b>State Tree</b> vẫn chọn macro state lớn (SAFEZONE/SURVIVAL/COMBAT/RESOURCE/EXPLORE).</li>
+                <li><b>Decision Tree</b> chọn tactic con trong COMBAT/SURVIVAL (aggressive attack, kite, strafe, ambush, retreat fire, dash escape...).</li>
+                <li><b>A*</b> dùng khi cần đi vòng obstacle: bot về safe zone, đi nhặt item, đuổi mục tiêu khi mất line-of-sight, quái truy đuổi player.</li>
             </ul>
         </div>
         <div class="ai-doc-flow">
             <h4>3) Online KNN học thời gian thực</h4>
-            <p><b>Dữ liệu thu thập mỗi pha bắn:</b> <code>[distance_to_target, target_hp, is_chased]</code> + nhãn hướng bắn <code>[dirX, dirY]</code>.</p>
+            <p><b>Dữ liệu thu thập mỗi pha bắn:</b> <code>[distance, targetHp, targetSpeed, isDashing, isChased, relativeAngle]</code> + nhãn hướng bắn <code>[dirX, dirY]</code>.</p>
             <p><b>Cách tính:</b> tìm K mẫu gần nhất (k=3), lấy trung bình hướng để dự đoán hướng di chuyển mục tiêu.</p>
-            <p><b>Trọng số khoảng cách:</b> distance*0.5, targetHp*2.0, isChased*50 (nhấn mạnh ngữ cảnh bị truy đuổi).</p>
+            <p><b>Trọng số khoảng cách (ví dụ):</b> distance*0.45, targetHp*1.8, targetSpeed*1.4, isDashing*16, isChased*45, relativeAngle*0.9.</p>
             <p><b>Cập nhật học:</b> mỗi ~2.5s/pulse, hệ thống ghi nhận accuracy, số mẫu KNN, score nhánh để điều chỉnh hành vi vòng sau.</p>
         </div>
         <div class="ai-doc-live">Realtime mỗi ~250ms trong khi cửa sổ đang mở.</div>
@@ -316,19 +316,112 @@ function lineRectIntersect(x1, y1, x2, y2, rx, ry, rw, rh) {
 }
 
 // ================================================================
+// PATHFINDING (A* GRID)
+// ================================================================
+const PATH_GRID_SIZE = 60;
+const Pathfinding = {
+    cacheKey: '',
+    cols: 0,
+    rows: 0,
+    blocked: [],
+    build(obstacles) {
+        let key = `${obstacles.length}|` + obstacles.map(o => `${Math.round(o.x)}:${Math.round(o.y)}:${Math.round(o.w)}:${Math.round(o.h)}`).join('|');
+        if (this.cacheKey === key) return;
+        this.cacheKey = key;
+        this.cols = Math.ceil(WORLD_WIDTH / PATH_GRID_SIZE);
+        this.rows = Math.ceil(WORLD_HEIGHT / PATH_GRID_SIZE);
+        this.blocked = new Array(this.cols * this.rows).fill(false);
+        for (let y = 0; y < this.rows; y++) {
+            for (let x = 0; x < this.cols; x++) {
+                let wx = x * PATH_GRID_SIZE + PATH_GRID_SIZE * 0.5;
+                let wy = y * PATH_GRID_SIZE + PATH_GRID_SIZE * 0.5;
+                let blocked = obstacles.some(o => wx >= o.x && wx <= o.x + o.w && wy >= o.y && wy <= o.y + o.h);
+                this.blocked[y * this.cols + x] = blocked;
+            }
+        }
+    },
+    toCell(x, y) {
+        return {
+            cx: Math.max(0, Math.min(this.cols - 1, Math.floor(x / PATH_GRID_SIZE))),
+            cy: Math.max(0, Math.min(this.rows - 1, Math.floor(y / PATH_GRID_SIZE)))
+        };
+    },
+    toWorld(cx, cy) {
+        return { x: cx * PATH_GRID_SIZE + PATH_GRID_SIZE * 0.5, y: cy * PATH_GRID_SIZE + PATH_GRID_SIZE * 0.5 };
+    },
+    idx(cx, cy) { return cy * this.cols + cx; },
+    walkable(cx, cy) {
+        if (cx < 0 || cy < 0 || cx >= this.cols || cy >= this.rows) return false;
+        return !this.blocked[this.idx(cx, cy)];
+    },
+    heuristic(ax, ay, bx, by) { return Math.abs(ax - bx) + Math.abs(ay - by); },
+    findPath(sx, sy, tx, ty, obstacles, maxSteps = 1800) {
+        this.build(obstacles);
+        let s = this.toCell(sx, sy), t = this.toCell(tx, ty);
+        if (!this.walkable(s.cx, s.cy) || !this.walkable(t.cx, t.cy)) return [];
+        let open = [{ cx: s.cx, cy: s.cy, g: 0, f: this.heuristic(s.cx, s.cy, t.cx, t.cy), parent: null }];
+        let closed = new Set();
+        let best = new Map();
+        best.set(this.idx(s.cx, s.cy), 0);
+        let dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+        let steps = 0;
+
+        while (open.length && steps < maxSteps) {
+            steps++;
+            let bestI = 0;
+            for (let i = 1; i < open.length; i++) if (open[i].f < open[bestI].f) bestI = i;
+            let cur = open.splice(bestI, 1)[0];
+            let curId = this.idx(cur.cx, cur.cy);
+            if (closed.has(curId)) continue;
+            closed.add(curId);
+            if (cur.cx === t.cx && cur.cy === t.cy) {
+                let out = [];
+                let n = cur;
+                while (n) { out.push(this.toWorld(n.cx, n.cy)); n = n.parent; }
+                out.reverse();
+                return out;
+            }
+            for (let [dx, dy] of dirs) {
+                let nx = cur.cx + dx, ny = cur.cy + dy;
+                if (!this.walkable(nx, ny)) continue;
+                let nid = this.idx(nx, ny);
+                if (closed.has(nid)) continue;
+                let ng = cur.g + 1;
+                if (best.has(nid) && best.get(nid) <= ng) continue;
+                best.set(nid, ng);
+                open.push({ cx: nx, cy: ny, g: ng, f: ng + this.heuristic(nx, ny, t.cx, t.cy), parent: cur });
+            }
+        }
+        return [];
+    }
+};
+
+// ================================================================
 // KNN SYSTEM
 // ================================================================
 class KNNPredictor {
-    constructor() { this.dataset = []; this.maxData = 200; this.lastPredictTime = 0; this.predictions = 0; this.hits = 0; }
-    record(distance, playerHp, isChased, dirX, dirY) {
+    constructor() { this.dataset = []; this.maxData = 260; this.lastPredictTime = 0; this.predictions = 0; this.hits = 0; }
+    record(distance, targetHp, targetSpeed, isDashing, isChased, relativeAngle, dirX, dirY) {
         if (this.dataset.length > this.maxData) this.dataset.shift();
-        this.dataset.push({ features: [distance, playerHp, isChased ? 1 : 0], label: { x: dirX, y: dirY }, time: Date.now() });
+        this.dataset.push({
+            features: [distance, targetHp, targetSpeed, isDashing ? 1 : 0, isChased ? 1 : 0, relativeAngle],
+            label: { x: dirX, y: dirY },
+            time: Date.now()
+        });
     }
-    predict(distance, playerHp, isChased, k = 3) {
+    predict(distance, targetHp, targetSpeed, isDashing, isChased, relativeAngle, k = 3) {
         if (this.dataset.length < 5) return null;
         this.lastPredictTime = Date.now(); this.predictions++;
         let distances = this.dataset.map(data => {
-            let d = Math.sqrt(Math.pow(data.features[0]-distance,2)*0.5 + Math.pow(data.features[1]-playerHp,2)*2.0 + Math.pow(data.features[2]-(isChased?1:0),2)*50);
+            let f = data.features;
+            let d = Math.sqrt(
+                Math.pow(f[0]-distance,2)*0.45 +
+                Math.pow(f[1]-targetHp,2)*1.8 +
+                Math.pow(f[2]-targetSpeed,2)*1.4 +
+                Math.pow(f[3]-(isDashing?1:0),2)*16 +
+                Math.pow(f[4]-(isChased?1:0),2)*45 +
+                Math.pow(f[5]-relativeAngle,2)*0.9
+            );
             return { distance: d, label: data.label };
         });
         distances.sort((a,b) => a.distance - b.distance);
@@ -362,8 +455,8 @@ class BotBrain {
         this.learningUpdates = 0; this.lastPulseAccuracy = 0;
         this.contextSnapshot = { hpRatio: 1, zoneDist: 0, zoneRadius: 1, threatDist: 9999 };
     }
-    recordCombatExperience(dist, targetHp, myHp, dirX, dirY, success) {
-        this.localKNN.record(dist, targetHp, myHp < 40, dirX, dirY);
+    recordCombatExperience(dist, targetHp, targetSpeed, isDashing, isChased, relativeAngle, myHp, dirX, dirY, success) {
+        this.localKNN.record(dist, targetHp, targetSpeed, isDashing, isChased, relativeAngle, dirX, dirY);
         this.combatPhaseShots++;
         if (success) {
             this.localKNN.hits++;
@@ -454,17 +547,26 @@ class BotBrain {
         this.currentMacroState = best ? best[0] : 'EXPLORE';
         return this.currentMacroState;
     }
-    chooseCombatTactic(dist, hpRatio, hasLOS) {
-        if (!hasLOS && this.iq > 35) return 'ambush';
-        if (hpRatio < 0.35) return 'retreat fire';
-        if (dist < this.preferredRange - 90) return 'kite';
-        if (dist > this.preferredRange + 90) return 'aggressive attack';
+    chooseCombatTactic(context) {
+        // Decision Tree cho micro tactic trong COMBAT
+        if (!context.hasLOS) return this.iq > 35 ? 'ambush' : 'aggressive attack';
+        if (context.hpRatio < 0.3) return 'retreat fire';
+        if (context.threatDist < this.preferredRange - 100) return 'kite';
+        if (context.threatDist > this.preferredRange + 90) return 'aggressive attack';
+        if (context.targetIsDashing || context.targetSpeed > 2.5) return 'strafe';
         return this.iq > 35 ? 'strafe' : 'aggressive attack';
     }
-    predictTarget(dist, targetHp, isChased) {
-        let localPred = this.localKNN.predict(dist, targetHp, isChased, 3);
-        if (localPred && this.localKNN.dataset.length >= 8) return localPred;
-        return GlobalKNN.predict(dist, targetHp, isChased, 3);
+    chooseSurvivalTactic(context) {
+        // Decision Tree cho micro tactic trong SURVIVAL
+        if (context.itemDist < 320 && context.hpRatio < 0.7) return 'resource fallback';
+        if (context.threatDist < 260) return 'dash escape';
+        if (context.zonePressure) return 'zone reposition';
+        return 'safe drift';
+    }
+    predictTarget(dist, targetHp, targetSpeed, isDashing, isChased, relativeAngle) {
+        let localPred = this.localKNN.predict(dist, targetHp, targetSpeed, isDashing, isChased, relativeAngle, 3);
+        if (localPred && this.localKNN.dataset.length >= 10) return localPred;
+        return GlobalKNN.predict(dist, targetHp, targetSpeed, isDashing, isChased, relativeAngle, 3);
     }
     getAccuracy() { return this.shotsFired > 0 ? (this.shotsHit / this.shotsFired * 100).toFixed(1) : '0.0'; }
     addLog(msg) { this.knowledgeLog.push({ time: Date.now(), msg }); if (this.knowledgeLog.length > this.maxLogSize) this.knowledgeLog.shift(); }
@@ -570,7 +672,7 @@ class Player extends Entity {
             if (inputKeys[' '] && now - this.lastDash > this.dashCooldown && (dx !== 0 || dy !== 0)) {
                 this.isDashing = true; this.lastDash = now; this.dashTargetX = dx; this.dashTargetY = dy;
                 let distToCenter = Math.hypot(this.x - WORLD_WIDTH/2, this.y - WORLD_HEIGHT/2);
-                GlobalKNN.record(distToCenter, this.hp, false, dx, dy);
+                GlobalKNN.record(distToCenter, this.hp, this.speed, this.isDashing, false, 0, dx, dy);
             }
             if (inputKeys['r']) this.reload();
             if (inputMouse.down && now - this.lastShot > this.fireRate) {
@@ -606,6 +708,7 @@ class BotPlayer extends Player {
         this.brain.aggressionBias = 0.3 + Math.random()*0.5;
         this.brain.preferredRange = 220 + Math.random()*120;
         this.lastHp = this.hp; this.lastLearnTick = 0;
+        this.pathCache = { waypoints: [], idx: 0, lastCalc: 0, tx: this.x, ty: this.y, reason: "", lastPosX: this.x, lastPosY: this.y, stuckAt: 0 };
     }
     hasLineOfSight(target, obstacles) {
         for (let obs of obstacles) { if (lineRectIntersect(this.x, this.y, target.x, target.y, obs.x, obs.y, obs.w, obs.h)) return false; }
@@ -660,34 +763,34 @@ class BotPlayer extends Player {
 
         if (macro === 'SAFEZONE') {
             this.brain.currentTactic = 'zone return';
-            this.moveTo(zone.x, zone.y);
+            this.navigateTo(zone.x, zone.y, obstacles, 'safezone_return', true);
             if (now - this.lastDash > this.dashCooldown) {
                 let zx = zone.x - this.x, zy = zone.y - this.y;
                 this.triggerDash(zx, zy);
             }
         } else if (macro === 'SURVIVAL') {
-            this.brain.currentTactic = 'dash escape';
-            if (closestItem && closestItem.dist < 320 && this.hp < 70) {
-                this.brain.currentTactic = 'resource fallback';
-                this.moveTo(closestItem.x, closestItem.y);
-            } else if (closestThreat && closestThreat.dist < 350) {
+            let survivalTactic = this.brain.chooseSurvivalTactic(context);
+            this.brain.currentTactic = survivalTactic;
+            if (survivalTactic === 'resource fallback' && closestItem && closestItem.dist < 500) {
+                this.navigateTo(closestItem.x, closestItem.y, obstacles, 'survival_item', false);
+            } else if ((survivalTactic === 'dash escape' || survivalTactic === 'zone reposition') && closestThreat && closestThreat.dist < 350) {
                 let dirX = this.x - closestThreat.entity.x, dirY = this.y - closestThreat.entity.y;
                 let safeDirX = (zone.x-this.x)*0.25 + dirX*0.75;
                 let safeDirY = (zone.y-this.y)*0.25 + dirY*0.75;
                 this.moveDir(safeDirX, safeDirY);
                 if (now - this.lastDash > this.dashCooldown) this.triggerDash(dirX, dirY);
             } else {
-                this.moveTo(zone.x, zone.y);
+                this.navigateTo(zone.x, zone.y, obstacles, 'safezone_return', true);
             }
         } else if (macro === 'COMBAT' && closestThreat && closestThreat.dist < smartAttackRange + 120) {
             let target = closestThreat.entity;
             let los = this.hasLineOfSight(target, obstacles);
-            let tactic = this.brain.chooseCombatTactic(closestThreat.dist, context.hpRatio, los);
+            let tactic = this.brain.chooseCombatTactic({ threatDist: closestThreat.dist, hpRatio: context.hpRatio, hasLOS: los, targetIsDashing: !!target.isDashing, targetSpeed: target.speed || 0 });
             this.brain.currentTactic = tactic;
 
-            if (tactic === 'ambush' && !los) this.moveTo(target.x, target.y);
+            if (tactic === 'ambush' && !los) this.navigateTo(target.x, target.y, obstacles, 'combat_ambush', false);
             else if (tactic === 'kite') this.moveDir(this.x-target.x, this.y-target.y);
-            else if (tactic === 'aggressive attack') this.moveTo(target.x, target.y);
+            else if (tactic === 'aggressive attack') this.navigateTo(target.x, target.y, obstacles, los ? 'combat_push' : 'combat_chase_los', !los);
             else if (tactic === 'retreat fire') this.moveDir(this.x-target.x, this.y-target.y);
             else {
                 let perpX = -(target.y-this.y), perpY = target.x-this.x;
@@ -700,7 +803,9 @@ class BotPlayer extends Player {
                 if (this.ammo > 0 && !this.isReloading) {
                     let shootTargetX = target.x, shootTargetY = target.y;
                     let isChased = monsters.some(m => Math.hypot(m.x-target.x,m.y-target.y) < 150);
-                    let predictedDir = this.brain.predictTarget(closestThreat.dist, target.hp, isChased);
+                    let ddx0 = target.x-this.x, ddy0 = target.y-this.y;
+                    let relAngle = Math.atan2(ddy0, ddx0);
+                    let predictedDir = this.brain.predictTarget(closestThreat.dist, target.hp, target.speed || 0, !!target.isDashing, isChased, relAngle);
                     if (predictedDir) {
                         let timeToReach = closestThreat.dist / 10;
                         let predictedSpeed = target.isDashing ? target.dashSpeed : target.speed;
@@ -710,14 +815,15 @@ class BotPlayer extends Player {
                     } else this.useKNNShot = false;
 
                     let ddx = target.x-this.x, ddy = target.y-this.y, dLen = Math.hypot(ddx,ddy) || 1;
-                    this.brain.recordCombatExperience(closestThreat.dist, target.hp, this.hp, ddx/dLen, ddy/dLen, false);
+                    let relAngleRec = Math.atan2(ddy, ddx);
+                    this.brain.recordCombatExperience(closestThreat.dist, target.hp, target.speed || 0, !!target.isDashing, isChased, relAngleRec, this.hp, ddx/dLen, ddy/dLen, false);
                     this.brain.recordShotFired();
                     this.shoot(shootTargetX, shootTargetY, projectiles);
                 } else if (this.ammo <= 0 && !this.isReloading) this.reload();
             }
         } else if (macro === 'RESOURCE') {
             this.brain.currentTactic = 'loot route';
-            if (closestItem && closestItem.dist < 700) this.moveTo(closestItem.x, closestItem.y);
+            if (closestItem && closestItem.dist < 700) this.navigateTo(closestItem.x, closestItem.y, obstacles, 'resource_item', false);
             else this.wander();
         } else {
             this.brain.currentTactic = this.brain.isDangerousArea(this.x, this.y) ? 'avoid hotspot' : 'patrol';
@@ -741,6 +847,30 @@ class BotPlayer extends Player {
     }
     moveTo(tx, ty) { let dx = tx-this.x, dy = ty-this.y, len = Math.hypot(dx,dy); if (len>0) { this.x += (dx/len)*this.speed*0.8; this.y += (dy/len)*this.speed*0.8; } }
     moveDir(dx, dy) { let len = Math.hypot(dx,dy); if (len>0) { this.x += (dx/len)*this.speed*0.8; this.y += (dy/len)*this.speed*0.8; } }
+    navigateTo(tx, ty, obstacles, reason = 'generic', forceRepath = false) {
+        let now = Date.now();
+        let moved = Math.hypot(this.x - this.pathCache.lastPosX, this.y - this.pathCache.lastPosY);
+        if (moved > 3) { this.pathCache.lastPosX = this.x; this.pathCache.lastPosY = this.y; this.pathCache.stuckAt = now; }
+        else if (!this.pathCache.stuckAt) this.pathCache.stuckAt = now;
+        let isStuck = now - this.pathCache.stuckAt > 550;
+        let targetMoved = Math.hypot(tx - this.pathCache.tx, ty - this.pathCache.ty) > 100;
+        let needRepath = forceRepath || isStuck || targetMoved || !this.pathCache.waypoints.length || this.pathCache.idx >= this.pathCache.waypoints.length || (now - this.pathCache.lastCalc > 420) || this.pathCache.reason !== reason;
+
+        if (needRepath) {
+            let path = Pathfinding.findPath(this.x, this.y, tx, ty, obstacles);
+            this.pathCache = { waypoints: path, idx: path.length > 1 ? 1 : 0, lastCalc: now, tx, ty, reason, lastPosX: this.x, lastPosY: this.y, stuckAt: now };
+        }
+
+        let wp = this.pathCache.waypoints[this.pathCache.idx];
+        if (wp) {
+            if (Math.hypot(this.x - wp.x, this.y - wp.y) < Math.max(28, this.radius + 10)) this.pathCache.idx++;
+            let nextWp = this.pathCache.waypoints[this.pathCache.idx];
+            if (nextWp) this.moveTo(nextWp.x, nextWp.y);
+            else this.moveTo(tx, ty);
+        } else {
+            this.moveTo(tx, ty);
+        }
+    }
     wander() { if (Date.now()-this.stateTimer>2000) { this.wanderAngle = Math.random()*Math.PI*2; this.stateTimer = Date.now(); } this.x += Math.cos(this.wanderAngle)*this.speed*0.5; this.y += Math.sin(this.wanderAngle)*this.speed*0.5; }
     triggerDash(dx, dy) { let len = Math.hypot(dx,dy); if (len === 0) return; this.isDashing = true; this.lastDash = Date.now(); this.dashTargetX = dx/len; this.dashTargetY = dy/len; }
 }
@@ -749,6 +879,7 @@ class Monster extends Entity {
     constructor(x, y) {
         super(x, y, 10, '#ff3333', 30, "Zombie");
         this.speed = 0.8; this.damage = 10; this.attackRate = 1000; this.lastAttack = 0;
+        this.pathCache = { waypoints: [], idx: 0, lastCalc: 0, tx: x, ty: y };
     }
     update(players, monsters, obstacles) {
         if (this.isDead) return;
@@ -759,11 +890,28 @@ class Monster extends Entity {
             if (d < this.radius+p.radius && !p.isDashing) { if (now-this.lastAttack > this.attackRate) { p.takeDamage(this.damage); this.lastAttack = now; } }
             if (d < minD) { minD = d; target = p; }
         }
-        let moveX = 0, moveY = 0;
-        if (target) { let dx = target.x-this.x, dy = target.y-this.y, len = Math.hypot(dx,dy); moveX += dx/len; moveY += dy/len; }
-        for (let m of monsters) { if (m===this||m.isDead) continue; let d = Math.hypot(this.x-m.x,this.y-m.y); if (d<25) { moveX -= (m.x-this.x); moveY -= (m.y-this.y); } }
-        let moveLen = Math.hypot(moveX, moveY);
-        if (moveLen > 0) { this.x += (moveX/moveLen)*this.speed; this.y += (moveY/moveLen)*this.speed; }
+        if (target) {
+            let hasLOS = !obstacles.some(obs => lineRectIntersect(this.x, this.y, target.x, target.y, obs.x, obs.y, obs.w, obs.h));
+            if (hasLOS) {
+                let dx = target.x-this.x, dy = target.y-this.y, len = Math.hypot(dx,dy) || 1;
+                this.x += (dx/len)*this.speed; this.y += (dy/len)*this.speed;
+            } else {
+                let nowTs = Date.now();
+                let targetMoved = Math.hypot(target.x - this.pathCache.tx, target.y - this.pathCache.ty) > 90;
+                if (!this.pathCache.waypoints.length || this.pathCache.idx >= this.pathCache.waypoints.length || targetMoved || nowTs - this.pathCache.lastCalc > 450) {
+                    let path = Pathfinding.findPath(this.x, this.y, target.x, target.y, obstacles);
+                    this.pathCache = { waypoints: path, idx: path.length > 1 ? 1 : 0, lastCalc: nowTs, tx: target.x, ty: target.y };
+                }
+                let wp = this.pathCache.waypoints[this.pathCache.idx];
+                if (wp && Math.hypot(this.x-wp.x, this.y-wp.y) < 20) this.pathCache.idx++;
+                let nextWp = this.pathCache.waypoints[this.pathCache.idx];
+                if (nextWp) {
+                    let dx = nextWp.x-this.x, dy = nextWp.y-this.y, len = Math.hypot(dx,dy) || 1;
+                    this.x += (dx/len)*this.speed; this.y += (dy/len)*this.speed;
+                }
+            }
+        }
+        for (let m of monsters) { if (m===this||m.isDead) continue; let d = Math.hypot(this.x-m.x,this.y-m.y); if (d<25) { this.x -= (m.x-this.x)*0.02; this.y -= (m.y-this.y)*0.02; } }
         this.resolveCollisions(obstacles); 
     }
 
