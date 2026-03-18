@@ -135,6 +135,151 @@
             background: rgba(0,0,0,0.5); padding: 4px 12px; border-radius: 4px;
         }
         #ping-indicator.hidden { display: none; }
+
+        /* ====== ALGORITHM DOC SCREEN ====== */
+        #algorithm-screen {
+            align-items: stretch;
+            justify-content: flex-start;
+            padding: 0;
+            overflow: auto;
+            background:
+                radial-gradient(circle at top left, rgba(66, 165, 245, 0.16), transparent 28%),
+                radial-gradient(circle at top right, rgba(255, 204, 0, 0.12), transparent 24%),
+                linear-gradient(180deg, #09111f 0%, #050912 100%);
+        }
+        .algo-shell {
+            display: grid;
+            grid-template-columns: minmax(240px, 280px) minmax(0, 1fr);
+            min-height: 100vh;
+            width: 100%;
+        }
+        .algo-sidebar {
+            position: sticky; top: 0; align-self: start; height: 100vh; overflow: auto;
+            padding: 28px 20px; border-right: 1px solid rgba(126, 207, 255, 0.15);
+            background: rgba(5, 10, 18, 0.86); backdrop-filter: blur(14px);
+        }
+        .algo-sidebar h2 { margin: 0; font-size: 26px; color: #7ecfff; }
+        .algo-sidebar p { color: #9ab0d0; font-size: 14px; line-height: 1.5; }
+        .algo-nav { display: grid; gap: 10px; margin-top: 22px; }
+        .algo-nav a {
+            color: #d9e7ff; text-decoration: none; padding: 12px 14px; border-radius: 10px;
+            border: 1px solid rgba(126, 207, 255, 0.12); background: rgba(255,255,255,0.03);
+            transition: 0.2s ease; font-size: 14px;
+        }
+        .algo-nav a:hover { transform: translateX(4px); border-color: rgba(255, 204, 0, 0.4); }
+        .algo-nav small { display: block; color: #8ea2bf; margin-top: 4px; }
+        .algo-sidebar .menu-btn { width: 100%; margin-top: 20px; }
+        .algo-content { padding: 36px 38px 56px; }
+        .algo-hero {
+            padding: 28px; border-radius: 20px;
+            background: linear-gradient(135deg, rgba(126,207,255,0.12), rgba(255,204,0,0.08));
+            border: 1px solid rgba(126,207,255,0.2); box-shadow: 0 18px 45px rgba(0,0,0,0.25);
+        }
+        .algo-kicker { color: #ffcc00; font-size: 13px; font-weight: 800; letter-spacing: 1.3px; text-transform: uppercase; }
+        .algo-hero h1 { margin: 10px 0 12px; font-size: clamp(34px, 5vw, 54px); color: #fff; }
+        .algo-hero p { max-width: 900px; color: #d4e1f5; font-size: 16px; line-height: 1.65; }
+        .algo-hero-grid, .algo-card-grid, .algo-mini-grid { display: grid; gap: 16px; }
+        .algo-hero-grid { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-top: 24px; }
+        .algo-stat, .algo-card, .algo-mini-card, .algo-flow-card, .algo-step, .algo-table {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(126,207,255,0.12); border-radius: 16px;
+        }
+        .algo-stat { padding: 16px; }
+        .algo-stat b { display: block; color: #7ecfff; font-size: 13px; margin-bottom: 8px; text-transform: uppercase; }
+        .algo-stat span { color: #fff; font-size: 28px; font-weight: 800; }
+        .algo-section { margin-top: 34px; }
+        .algo-section-header { display: flex; justify-content: space-between; gap: 16px; align-items: end; margin-bottom: 18px; }
+        .algo-section-header h2 { margin: 0; font-size: 28px; color: #fff; }
+        .algo-section-header p { max-width: 720px; margin: 0; color: #a7bad7; line-height: 1.6; }
+        .algo-card-grid { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+        .algo-card, .algo-flow-card { padding: 18px; }
+        .algo-card h3, .algo-flow-card h3 { margin: 0 0 10px; color: #ffeb3b; font-size: 18px; }
+        .algo-card p, .algo-card li, .algo-flow-card p, .algo-flow-card li { color: #d7e4f9; line-height: 1.6; }
+        .algo-card ul, .algo-flow-card ul { padding-left: 18px; margin: 10px 0 0; }
+        .algo-tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .algo-tag {
+            display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 999px;
+            background: rgba(255,255,255,0.06); color: #dce7fb; font-size: 12px; border: 1px solid rgba(255,255,255,0.07);
+        }
+        .algo-mini-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-top: 16px; }
+        .algo-mini-card { padding: 14px; }
+        .algo-mini-card b { color: #7ecfff; display: block; margin-bottom: 8px; }
+        .algo-mini-card p { margin: 0; color: #d7e4f9; line-height: 1.5; }
+        .algo-flow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+        .algo-visual-stack { display: grid; gap: 18px; }
+        .algo-visual-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+        .algo-visual-card { padding: 18px; background: rgba(255,255,255,0.04); border: 1px solid rgba(126,207,255,0.12); border-radius: 18px; }
+        .algo-visual-card h3 { margin: 0 0 12px; color: #ffeb3b; }
+        .algo-visual-card p { margin: 0 0 14px; color: #d7e4f9; line-height: 1.6; }
+        .algo-pipeline-graphic { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; align-items: center; }
+        .algo-pipeline-node { position: relative; min-height: 108px; padding: 14px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.08); background: linear-gradient(180deg, rgba(126,207,255,0.12), rgba(255,255,255,0.04)); }
+        .algo-pipeline-node strong { display: block; color: #fff; margin-bottom: 8px; font-size: 15px; }
+        .algo-pipeline-node span { color: #bed1f2; font-size: 13px; line-height: 1.45; }
+        .algo-pipeline-arrow { display: flex; align-items: center; justify-content: center; color: #7ecfff; font-size: 26px; font-weight: 900; }
+        .algo-branch-tree { display: grid; gap: 14px; }
+        .algo-tree-root { text-align: center; padding: 14px 16px; border-radius: 16px; background: linear-gradient(135deg, rgba(66,165,245,0.18), rgba(25,118,210,0.18)); border: 1px solid rgba(126,207,255,0.2); }
+        .algo-tree-root strong { display: block; color: #fff; font-size: 16px; }
+        .algo-tree-root span { color: #bed1f2; font-size: 13px; }
+        .algo-tree-branches { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+        .algo-branch { padding: 14px; border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); min-height: 120px; }
+        .algo-branch b { display: block; margin-bottom: 8px; }
+        .algo-branch small { display: block; color: #a8bada; line-height: 1.45; }
+        .algo-branch.safe { box-shadow: inset 0 0 0 1px rgba(0,188,212,0.25); }
+        .algo-branch.combat { box-shadow: inset 0 0 0 1px rgba(244,67,54,0.25); }
+        .algo-branch.survival { box-shadow: inset 0 0 0 1px rgba(255,152,0,0.25); }
+        .algo-branch.resource { box-shadow: inset 0 0 0 1px rgba(156,39,176,0.25); }
+        .algo-branch.explore { box-shadow: inset 0 0 0 1px rgba(96,125,139,0.25); }
+        .algo-knn-board { display: grid; gap: 12px; }
+        .algo-feature-bars { display: grid; gap: 10px; }
+        .algo-feature-row { display: grid; grid-template-columns: 110px 1fr 42px; gap: 10px; align-items: center; }
+        .algo-feature-row label { color: #dce7fb; font-size: 13px; }
+        .algo-feature-bar { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
+        .algo-feature-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #42a5f5, #ab47bc); }
+        .algo-feature-row span { color: #7ecfff; font-size: 12px; text-align: right; }
+        .algo-knn-neighbors { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+        .algo-neighbor { flex: 1 1 80px; min-width: 80px; padding: 10px; border-radius: 14px; text-align: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
+        .algo-neighbor b { color: #fff; display: block; }
+        .algo-neighbor small { color: #a8bada; }
+        .algo-aim-output { margin-top: 10px; padding: 12px; border-radius: 14px; background: linear-gradient(135deg, rgba(255,0,255,0.14), rgba(126,207,255,0.12)); color: #e9f0ff; }
+        .algo-grid-demo { display: grid; grid-template-columns: repeat(8, 24px); gap: 6px; justify-content: center; margin-top: 8px; }
+        .algo-grid-cell { width: 24px; height: 24px; border-radius: 7px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); }
+        .algo-grid-cell.block { background: #334155; }
+        .algo-grid-cell.path { background: #42a5f5; box-shadow: 0 0 10px rgba(66,165,245,0.5); }
+        .algo-grid-cell.start { background: #22c55e; }
+        .algo-grid-cell.goal { background: #f97316; }
+        .algo-grid-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+        .algo-grid-legend span { display: inline-flex; align-items: center; gap: 6px; color: #dce7fb; font-size: 12px; }
+        .algo-grid-legend i { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+        .algo-cycle-graphic { display: grid; gap: 12px; }
+        .algo-cycle-ring { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .algo-cycle-stage { padding: 14px; min-height: 110px; border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); }
+        .algo-cycle-stage b { display: block; margin-bottom: 8px; color: #fff; }
+        .algo-cycle-stage small { color: #a8bada; line-height: 1.5; }
+        .algo-visual-note { margin-top: 12px; padding: 12px 14px; border-left: 3px solid #7ecfff; background: rgba(126,207,255,0.07); border-radius: 10px; color: #dce7fb; line-height: 1.6; }
+        .algo-step-list { display: grid; gap: 12px; }
+        .algo-step { padding: 16px; display: grid; grid-template-columns: 56px 1fr; gap: 14px; }
+        .algo-step-no {
+            width: 56px; height: 56px; border-radius: 16px; display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(135deg, #42a5f5, #1976d2); color: #fff; font-size: 22px; font-weight: 900;
+        }
+        .algo-step h4 { margin: 0 0 8px; color: #fff; font-size: 18px; }
+        .algo-step p { margin: 0; color: #d2def5; line-height: 1.6; }
+        .algo-step ul { margin: 10px 0 0; padding-left: 18px; color: #d2def5; }
+        .algo-table { overflow: hidden; }
+        .algo-table table { width: 100%; border-collapse: collapse; }
+        .algo-table th, .algo-table td { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.07); text-align: left; vertical-align: top; }
+        .algo-table th { color: #7ecfff; font-size: 13px; text-transform: uppercase; letter-spacing: 0.7px; background: rgba(255,255,255,0.03); }
+        .algo-table td { color: #dbe7fb; line-height: 1.55; }
+        .algo-table tr:last-child td { border-bottom: none; }
+        .algo-footer-note { margin-top: 28px; color: #8ea2bf; font-size: 13px; line-height: 1.6; }
+
+        @media (max-width: 980px) {
+            .algo-shell { grid-template-columns: 1fr; }
+            .algo-sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid rgba(126, 207, 255, 0.15); }
+            .algo-content { padding: 24px 18px 40px; }
+            .algo-step { grid-template-columns: 1fr; }
+            .algo-feature-row { grid-template-columns: 1fr; }
+            .algo-cycle-ring { grid-template-columns: 1fr 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -145,6 +290,7 @@
     <div class="game-subtitle">Battle Royale with AI Intelligence System</div>
     <button class="menu-btn btn-solo" onclick="startSoloGame()">🎮 Chơi Đơn (Solo)</button>
     <button class="menu-btn btn-multi" onclick="showLobby()">🌐 Chơi Online (Multiplayer)</button>
+    <button class="menu-btn" style="background:#4527a0;color:white;border-color:#7e57c2" onclick="showAlgorithmDocs()">🧠 Xem web mô tả thuật toán</button>
 </div>
 
 <!-- ====== LOBBY SCREEN ====== -->
@@ -180,6 +326,123 @@
             <div style="color:#888;font-size:13px;margin-top:10px">Chờ chủ phòng bắt đầu...</div>
             <button class="menu-btn btn-back" onclick="leaveLobby()">← Rời phòng</button>
         </div>
+    </div>
+</div>
+
+<!-- ====== ALGORITHM DOC SCREEN ====== -->
+<div id="algorithm-screen" class="screen-overlay hidden">
+    <div class="algo-shell">
+        <aside class="algo-sidebar">
+            <h2>🧠 Algorithm Web</h2>
+            <p>Trang này giải thích các thuật toán đang chạy trong repo: AI bot, dự đoán bắn bằng KNN, pathfinding A*, quái vật truy đuổi và đồng bộ multiplayer.</p>
+            <nav class="algo-nav" id="algo-nav"></nav>
+            <button class="menu-btn btn-back" onclick="backFromAlgorithmDocs()">← Quay lại</button>
+        </aside>
+        <main class="algo-content">
+            <section class="algo-hero">
+                <div class="algo-kicker">Repo intelligence breakdown</div>
+                <h1>Thuật toán nào đang điều khiển game này?</h1>
+                <p>Repo không chỉ là một game bắn súng sinh tồn đơn giản. Nó kết hợp nhiều tầng thuật toán: tầng chiến lược để chọn trạng thái lớn, tầng chiến thuật để chọn vi hành vi, tầng học online để cải thiện ngắm bắn, tầng tìm đường để đi vòng vật cản, cùng với cơ chế chia sẻ tri thức và đồng bộ host/client. Toàn bộ pipeline này chạy lặp lại theo từng frame để bot vừa phản ứng nhanh, vừa có khả năng thích nghi dần theo thời gian.</p>
+                <div class="algo-hero-grid" id="algo-hero-stats"></div>
+            </section>
+            <section class="algo-section" id="algo-overview-section">
+                <div class="algo-section-header">
+                    <div>
+                        <h2>Toàn cảnh pipeline</h2>
+                        <p>Đây là đường đi tổng quát của một quyết định AI trong mỗi vòng lặp: quan sát → chấm điểm → chọn nhánh → điều hướng/nhắm bắn → ghi nhận kết quả → học lại.</p>
+                    </div>
+                </div>
+                <div class="algo-step-list" id="algo-overview-steps"></div>
+            </section>
+            <section class="algo-section" id="algo-visual-section">
+                <div class="algo-section-header">
+                    <div>
+                        <h2>Mô tả bằng đồ hoạ</h2>
+                        <p>Phần này chuyển logic kỹ thuật thành sơ đồ trực quan để nhìn là hiểu luồng hoạt động của từng thuật toán và cách chúng nối với nhau.</p>
+                    </div>
+                </div>
+                <div class="algo-visual-stack">
+                    <div class="algo-visual-card">
+                        <h3>Sơ đồ pipeline AI</h3>
+                        <p>Mỗi khung là một tầng xử lý. Khi bot cần quyết định, nó đi tuần tự qua các tầng này.</p>
+                        <div class="algo-pipeline-graphic" id="algo-pipeline-graphic"></div>
+                    </div>
+                    <div class="algo-visual-grid">
+                        <div class="algo-visual-card">
+                            <h3>State Tree dạng cây nhánh</h3>
+                            <p>State Tree là bộ định tuyến chiến lược: nhìn context rồi đẩy bot vào 1 trong 5 nhánh chính.</p>
+                            <div class="algo-branch-tree" id="algo-state-tree-graphic"></div>
+                        </div>
+                        <div class="algo-visual-card">
+                            <h3>KNN predictor dạng đồ hoạ</h3>
+                            <p>KNN xem các feature hiện tại, tìm hàng xóm gần nhất rồi trả ra hướng bắn đón đầu.</p>
+                            <div class="algo-knn-board" id="algo-knn-graphic"></div>
+                        </div>
+                    </div>
+                    <div class="algo-visual-grid">
+                        <div class="algo-visual-card">
+                            <h3>A* grid pathfinding</h3>
+                            <p>Ô xanh là đường đi tối ưu, ô xám là tường, ô xanh lá là điểm bắt đầu và ô cam là đích.</p>
+                            <div id="algo-astar-graphic"></div>
+                        </div>
+                        <div class="algo-visual-card">
+                            <h3>Chu trình kết hợp giữa các thuật toán</h3>
+                            <p>Khi nhìn toàn hệ thống, mỗi thuật toán gánh một nhiệm vụ riêng rồi chuyển kết quả sang tầng tiếp theo.</p>
+                            <div class="algo-cycle-graphic" id="algo-cycle-graphic"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="algo-section" id="algo-systems-section">
+                <div class="algo-section-header">
+                    <div>
+                        <h2>Từng thuật toán riêng lẻ</h2>
+                        <p>Mỗi khối bên dưới mô tả vai trò, input, output, thời điểm kích hoạt và các bước xử lý chi tiết của từng thuật toán trong repo.</p>
+                    </div>
+                </div>
+                <div class="algo-card-grid" id="algo-system-cards"></div>
+            </section>
+            <section class="algo-section" id="algo-combined-section">
+                <div class="algo-section-header">
+                    <div>
+                        <h2>Cách các thuật toán kết hợp với nhau</h2>
+                        <p>Hệ thống mạnh ở chỗ các thuật toán không chạy độc lập. Mỗi tầng bổ sung một phần quyết định mà tầng khác không xử lý tốt.</p>
+                    </div>
+                </div>
+                <div class="algo-flow-grid" id="algo-combined-flows"></div>
+            </section>
+            <section class="algo-section" id="algo-scenarios-section">
+                <div class="algo-section-header">
+                    <div>
+                        <h2>Step by step theo kịch bản</h2>
+                        <p>Phần này mô phỏng 3 tình huống điển hình để thấy rõ bot ra quyết định thế nào từ đầu tới cuối.</p>
+                    </div>
+                </div>
+                <div class="algo-card-grid" id="algo-scenarios"></div>
+            </section>
+            <section class="algo-section" id="algo-matrix-section">
+                <div class="algo-section-header">
+                    <div>
+                        <h2>Ma trận input → thuật toán → output</h2>
+                        <p>Ma trận này giúp đọc nhanh: tín hiệu nào kích hoạt thuật toán nào và thuật toán đó trả ra quyết định gì.</p>
+                    </div>
+                </div>
+                <div class="algo-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Input / Trigger</th>
+                                <th>Thuật toán xử lý</th>
+                                <th>Output / Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="algo-matrix-body"></tbody>
+                    </table>
+                </div>
+                <div class="algo-footer-note">Mẹo đọc nhanh: nếu muốn hiểu logic cốt lõi nhất, hãy xem theo thứ tự <b>State Tree → Decision Tree → KNN → A*</b>. Đây là chuỗi quan trọng nhất điều khiển bot trong repo này.</div>
+            </section>
+        </main>
     </div>
 </div>
 
@@ -254,8 +517,283 @@
 // ================================================================
 // GLOBAL STATE
 // ================================================================
-let currentScreen = 'menu'; // 'menu' | 'lobby' | 'game'
+let currentScreen = 'menu'; // 'menu' | 'lobby' | 'game' | 'algorithm'
+let previousNonAlgorithmScreen = 'menu';
 let isMultiplayer = false;
+
+const ALGORITHM_HERO_STATS = [
+    { label: 'Thuật toán chính', value: '6', note: 'State Tree, Decision Tree, KNN, A*, Knowledge Pool, Multiplayer Sync' },
+    { label: 'Chu kỳ ra quyết định', value: 'Mỗi frame', note: 'Bot đánh giá lại bối cảnh liên tục trong game loop' },
+    { label: 'Nhịp học online', value: '~2.5s', note: 'Learning pulse cập nhật score và hiệu quả bắn' },
+    { label: 'Loại quyết định', value: 'Macro + Micro', note: 'Vừa chọn trạng thái lớn vừa chọn chiến thuật cụ thể' }
+];
+
+const ALGORITHM_PIPELINE_GRAPHIC = [
+    { title: 'Sense', desc: 'Đọc HP, địch, item, bo, LOS' },
+    { title: 'Score', desc: 'State Tree chấm điểm 5 macro state' },
+    { title: 'Select', desc: 'Decision Tree chọn tactic con' },
+    { title: 'Route', desc: 'A* hoặc move trực tiếp' },
+    { title: 'Predict', desc: 'KNN ước lượng hướng mục tiêu' },
+    { title: 'Act', desc: 'Bắn, dash, loot, retreat' },
+    { title: 'Learn', desc: 'Ghi dataset, pulse, share knowledge' }
+];
+
+const ALGORITHM_STATE_BRANCHES = [
+    { cls: 'safe', title: 'SAFEZONE', desc: 'Ngoài bo / sát mép bo → quay về tâm zone ngay.' },
+    { cls: 'combat', title: 'COMBAT', desc: 'Đủ HP + địch trong tầm → ưu tiên giao tranh.' },
+    { cls: 'survival', title: 'SURVIVAL', desc: 'HP thấp / bị vây / áp lực bo → rút lui thông minh.' },
+    { cls: 'resource', title: 'RESOURCE', desc: 'Thiếu máu + item gần → chuyển sang loot route.' },
+    { cls: 'explore', title: 'EXPLORE', desc: 'Ít nguy hiểm → tuần tra và tìm góc có lợi.' }
+];
+
+const ALGORITHM_KNN_FEATURES = [
+    ['distance', 72],
+    ['targetHp', 46],
+    ['targetSpeed', 61],
+    ['isDashing', 88],
+    ['isChased', 67],
+    ['relativeAngle', 54]
+];
+
+const ALGORITHM_ASTAR_CELLS = [
+    'start','path','empty','empty','block','empty','empty','empty',
+    'empty','path','block','empty','block','empty','block','empty',
+    'empty','path','block','empty','empty','empty','block','empty',
+    'empty','path','path','path','path','empty','block','empty',
+    'block','block','block','block','path','empty','empty','empty',
+    'empty','empty','empty','block','path','block','block','empty',
+    'empty','block','empty','empty','path','path','path','goal',
+    'empty','block','empty','empty','empty','block','empty','empty'
+];
+
+const ALGORITHM_CYCLE_STAGES = [
+    { title: 'Macro logic', desc: 'State Tree trả về trạng thái lớn để bot biết đang sống sót, đánh nhau hay đi loot.' },
+    { title: 'Micro logic', desc: 'Decision Tree biến trạng thái lớn thành tactic cụ thể như kite, ambush hay dash escape.' },
+    { title: 'Execution', desc: 'A* lo đường đi, KNN lo điểm ngắm, player logic lo bắn/dash/collision.' },
+    { title: 'Feedback', desc: 'Learning pulse, GlobalKNN và knowledge sharing cập nhật chất lượng cho vòng sau.' }
+];
+
+const ALGORITHM_OVERVIEW_STEPS = [
+    { title: 'Thu thập ngữ cảnh', body: 'Bot đo HP hiện tại, khoảng cách tới địch gần nhất, số mối đe dọa trong bán kính 400, khoảng cách tới item, khoảng cách tới safe zone và trạng thái bị ép bo hay chưa.' },
+    { title: 'State Tree chấm điểm macro state', body: 'Từ context, bot tính điểm cho 5 trạng thái lớn: COMBAT, SURVIVAL, RESOURCE, EXPLORE và SAFEZONE. Trạng thái có điểm cao nhất sẽ thắng.' },
+    { title: 'Decision Tree chọn micro tactic', body: 'Nếu macro state là COMBAT hoặc SURVIVAL, bot đi thêm một tầng quyết định con như aggressive attack, kite, ambush, retreat fire, dash escape hoặc zone reposition.' },
+    { title: 'A* hoặc di chuyển trực tiếp', body: 'Khi cần đi vòng vật cản, bot dùng A* để tạo danh sách waypoint. Nếu line-of-sight thông thoáng, bot có thể di chuyển trực tiếp để giảm chi phí tính toán.' },
+    { title: 'KNN dự đoán hướng bắn', body: 'Khi chuẩn bị bắn, bot tra KNN cục bộ trước; nếu dữ liệu địa phương chưa đủ, nó fallback sang GlobalKNN để ước lượng hướng mục tiêu sẽ chạy tiếp.' },
+    { title: 'Thực thi hành động', body: 'Bot bắn, dash, lùi, áp sát hoặc nhặt item tùy chiến thuật hiện tại. Đạn KNN được tô màu riêng để quan sát trực tiếp.' },
+    { title: 'Ghi nhận kết quả và học', body: 'Kết quả pha combat được ghi vào dataset, accuracy được tổng hợp theo pulse, bot học thêm từ đồng đội gần đó và còn kế thừa tri thức khi bot khác chết.' }
+];
+
+const ALGORITHM_SYSTEMS = [
+    {
+        title: '1. State Tree (ra quyết định cấp chiến lược)',
+        summary: 'Đây là bộ điều phối cấp cao. Nó không quyết định đi theo vector nào ngay lập tức, mà quyết định bot đang ở chế độ nào.',
+        bullets: [
+            'Input chính: hpRatio, threatDist, nearbyThreats, itemDist, attackRange, zonePressure, outsideZone.',
+            'Nó chấm điểm 5 nhánh: COMBAT, SURVIVAL, RESOURCE, EXPLORE, SAFEZONE.',
+            'SAFEZONE có độ ưu tiên cực cao khi bot ở ngoài vòng bo hoặc gần mép bo.',
+            'Output là macro state, ví dụ COMBAT hoặc SURVIVAL.'
+        ],
+        steps: [
+            'B1: đọc context hiện tại của bot.',
+            'B2: tính điểm từng state bằng công thức cộng trọng số.',
+            'B3: sort các state theo điểm giảm dần.',
+            'B4: chọn state đứng đầu làm currentMacroState.',
+            'B5: nếu outsideZone thì ép macro = SAFEZONE để không tự sát vì bo.'
+        ],
+        tags: ['Chiến lược', 'Rule-based scoring', 'Ưu tiên theo context']
+    },
+    {
+        title: '2. Decision Tree (vi chiến thuật trong combat/survival)',
+        summary: 'Khi State Tree đã nói “đánh” hoặc “rút”, Decision Tree mới chọn cách đánh/rút cụ thể.',
+        bullets: [
+            'Trong COMBAT, bot xét line-of-sight, HP, khoảng cách tới đối thủ, tốc độ và dash của mục tiêu.',
+            'Trong SURVIVAL, bot xét itemDist, threatDist và zonePressure.',
+            'Các tactic có thể trả ra: ambush, aggressive attack, kite, strafe, retreat fire, resource fallback, dash escape...'
+        ],
+        steps: [
+            'B1: kiểm tra macro hiện tại là COMBAT hay SURVIVAL.',
+            'B2: dùng các điều kiện if/else để đi tới một lá quyết định.',
+            'B3: trả về tactic con.',
+            'B4: tactic đó sẽ quyết định có bắn, áp sát, lùi, hay dash ngay.'
+        ],
+        tags: ['Micro tactic', 'Rule tree', 'Context-sensitive']
+    },
+    {
+        title: '3. Online KNN Predictor (học bắn theo thời gian thực)',
+        summary: 'KNN là lớp học online dùng để ước lượng hướng di chuyển tiếp theo của mục tiêu nhằm bắn đón đầu.',
+        bullets: [
+            'Feature vector gồm distance, targetHp, targetSpeed, isDashing, isChased và relativeAngle.',
+            'Mỗi mẫu lưu thêm label là vector hướng bắn thành công hoặc quan sát được.',
+            'KNN dùng khoảng cách Euclid có trọng số, trong đó isChased và isDashing được nhân trọng số rất cao.',
+            'Bot ưu tiên localKNN; nếu chưa đủ mẫu thì fallback sang GlobalKNN.'
+        ],
+        steps: [
+            'B1: ghi dữ liệu combat mới vào dataset.',
+            'B2: khi cần bắn, bot tạo vector feature hiện tại.',
+            'B3: tính khoảng cách tới toàn bộ mẫu lịch sử.',
+            'B4: chọn k = 3 mẫu gần nhất.',
+            'B5: lấy trung bình vector hướng rồi chuẩn hóa.',
+            'B6: dịch điểm ngắm về phía mục tiêu được dự báo sẽ chạy tới.'
+        ],
+        tags: ['Machine learning nhẹ', 'Online learning', 'Prediction']
+    },
+    {
+        title: '4. A* Grid Pathfinding (đi vòng obstacle)',
+        summary: 'A* giúp bot và quái không bị đứng ngẩn người khi giữa chúng và mục tiêu có tường chắn.',
+        bullets: [
+            'Thế giới được chia thành grid cell 60x60.',
+            'Mỗi cell được đánh blocked hoặc walkable dựa trên obstacle.',
+            'Heuristic dùng Manhattan distance.',
+            'Path trả về là dãy waypoint tâm ô để entity bám theo.'
+        ],
+        steps: [
+            'B1: build grid cache từ obstacle.',
+            'B2: map tọa độ thế giới sang cell start và target.',
+            'B3: nếu start/target bị chặn thì tìm ô walkable gần nhất.',
+            'B4: mở danh sách open set với cell bắt đầu.',
+            'B5: lặp: lấy node có f thấp nhất, mở rộng 4 hướng.',
+            'B6: tới đích thì backtrack parent để dựng waypoint.',
+            'B7: bot đi lần lượt qua waypoint và repath khi kẹt / target di chuyển.'
+        ],
+        tags: ['Pathfinding', 'Grid-based', 'Obstacle avoidance']
+    },
+    {
+        title: '5. Knowledge Sharing (học xã hội giữa bot)',
+        summary: 'Repo có thêm một tầng “meta-learning” nhẹ: bot có thể học từ bot khác hoặc kế thừa tri thức từ bot vừa chết.',
+        bullets: [
+            'Bot gần nhau sẽ copy ngẫu nhiên một ít mẫu KNN từ bot có IQ cao hơn.',
+            'preferredRange, aggressionBias và fleeThreshold được kéo dần về giá trị của bot mạnh hơn.',
+            'Tactical memory và stateTreeScores cũng có thể được truyền lại.',
+            'KnowledgePool còn ghi sự kiện damage_taken và bot_death để hỗ trợ phối hợp.'
+        ],
+        steps: [
+            'B1: mỗi ~2s, bot tìm bot đồng minh gần trong bán kính 600.',
+            'B2: nếu bot kia có IQ cao hơn, bot hiện tại học một phần dataset và bias.',
+            'B3: khi một bot chết, tri thức cuối được đóng gói thành death knowledge.',
+            'B4: bot sống sót hấp thụ tri thức đó để tăng IQ và bổ sung tactical memory.'
+        ],
+        tags: ['Knowledge transfer', 'Cooperation', 'Adaptive']
+    },
+    {
+        title: '6. Monster Chase + LOS/A* hybrid',
+        summary: 'Zombie dùng logic đơn giản hơn bot nhưng rất hiệu quả: nếu nhìn thấy người chơi thì lao thẳng, còn bị chắn thì đổi sang A*.',
+        bullets: [
+            'Monster luôn chọn player sống gần nhất làm target.',
+            'Nếu chạm gần đủ thì gây sát thương theo cooldown.',
+            'Nếu có line-of-sight thì di chuyển vector thẳng.',
+            'Nếu mất line-of-sight thì tính path A* và bám waypoint.'
+        ],
+        steps: [
+            'B1: quét toàn bộ player để chọn mục tiêu gần nhất.',
+            'B2: kiểm tra LOS bằng lineRectIntersect với obstacles.',
+            'B3: có LOS thì move trực tiếp.',
+            'B4: không có LOS thì tái tính path định kỳ hoặc khi target đổi vị trí nhiều.',
+            'B5: tránh chồng chéo với quái khác rồi resolve collision.'
+        ],
+        tags: ['PvE AI', 'LOS', 'A* fallback']
+    },
+    {
+        title: '7. Multiplayer Sync (host authoritative)',
+        summary: 'Trong online mode, repo dùng thuật toán đồng bộ trạng thái kiểu host-authoritative để cân bằng mượt và chính xác.',
+        bullets: [
+            'Host chạy game logic thật và broadcast state khoảng 15 Hz.',
+            'Client gửi input khoảng 30 Hz.',
+            'Client-side prediction cho di chuyển/bắn giúp cảm giác điều khiển mượt hơn.',
+            'Khi state host về, client nội suy hoặc sửa sai vị trí cục bộ.'
+        ],
+        steps: [
+            'B1: host serialize player, monster, projectile, item, safe zone.',
+            'B2: client gửi input hiện tại.',
+            'B3: client tạm tự chạy prediction local.',
+            'B4: nhận snapshot từ host.',
+            'B5: entity remote được nội suy, entity local được nắn nhẹ hoặc snap nếu sai lệch lớn.'
+        ],
+        tags: ['Networking', 'Prediction', 'Reconciliation']
+    }
+];
+
+const ALGORITHM_COMBINED_FLOWS = [
+    {
+        title: 'Combat stack: State Tree + Decision Tree + KNN',
+        items: [
+            'State Tree quyết định có nên chiến đấu hay không.',
+            'Decision Tree chọn kiểu đánh phù hợp với khoảng cách/HP/LOS.',
+            'KNN cải thiện điểm ngắm khi bot thực sự bóp cò.',
+            'Kết quả combat lại quay ngược về cập nhật dataset và score.'
+        ]
+    },
+    {
+        title: 'Movement stack: State Tree + A* + Dash',
+        items: [
+            'State Tree nói bot nên đi về bo, đi loot hay áp sát.',
+            'A* tìm đường vòng nếu có obstacle chắn.',
+            'Bot theo waypoint và repath khi bị kẹt hoặc mục tiêu dịch chuyển.',
+            'Dash được dùng như booster trong SAFEZONE hoặc SURVIVAL.'
+        ]
+    },
+    {
+        title: 'Learning stack: KNN + Learning Pulse + Knowledge Sharing',
+        items: [
+            'Mỗi pha combat tạo thêm mẫu dữ liệu mới.',
+            'Learning pulse ~2.5s tổng kết hit ratio để tăng/giảm score hành vi.',
+            'Bot mạnh truyền dataset/bias cho bot yếu hơn.',
+            'Death knowledge giúp đội bot không mất sạch kinh nghiệm khi một cá thể chết.'
+        ]
+    },
+    {
+        title: 'Online stack: Host logic + Client prediction + Reconciliation',
+        items: [
+            'Host mới là nguồn sự thật cuối cùng của game state.',
+            'Client vẫn tự chạy prediction để cảm giác điều khiển không bị delay.',
+            'Snapshot từ host sửa drift bằng interpolation hoặc snap.',
+            'Cách này giúp AI và vật lý vẫn nhất quán giữa các máy.'
+        ]
+    }
+];
+
+const ALGORITHM_SCENARIOS = [
+    {
+        title: 'Kịch bản 1: Bot thấp máu, gần bo, có item máu',
+        steps: [
+            '1. Bot thấy hpRatio thấp và zonePressure cao.',
+            '2. State Tree so điểm và thường đẩy SURVIVAL hoặc SAFEZONE lên đầu.',
+            '3. Decision Tree kiểm tra itemDist; nếu item gần và HP còn dưới ngưỡng thì chọn resource fallback.',
+            '4. Nếu đường tới item có tường chắn, bot gọi A* để đi vòng.',
+            '5. Nếu threat rất gần, bot có thể dash escape trước rồi mới đổi hướng loot.'
+        ]
+    },
+    {
+        title: 'Kịch bản 2: Bot nhìn thấy mục tiêu đang dash',
+        steps: [
+            '1. Context cho thấy threatDist trong tầm đánh và HP đủ cao.',
+            '2. State Tree chọn COMBAT.',
+            '3. Decision Tree nhận targetIsDashing = true nên ưu tiên strafe hoặc aggressive attack tùy khoảng cách.',
+            '4. Khi bắn, KNN dùng feature isDashing để tăng trọng số mẫu tương tự trong lịch sử.',
+            '5. Bot bắn đón đầu thay vì nhắm đúng vị trí hiện tại.'
+        ]
+    },
+    {
+        title: 'Kịch bản 3: Zombie bị tường chắn khi đuổi người chơi',
+        steps: [
+            '1. Monster chọn player gần nhất.',
+            '2. LOS check phát hiện obstacle chắn giữa quái và người chơi.',
+            '3. Monster chuyển sang A* để sinh waypoint.',
+            '4. Nếu target chạy xa thêm, quái repath sau một khoảng thời gian ngắn.',
+            '5. Khi LOS mở lại, quái quay về mode lao thẳng để tiết kiệm tính toán.'
+        ]
+    }
+];
+
+const ALGORITHM_MATRIX = [
+    ['HP thấp + nhiều địch gần', 'State Tree → Decision Tree', 'Chuyển sang SURVIVAL rồi chọn dash escape / safe drift / resource fallback'],
+    ['Ở ngoài safe zone', 'State Tree + navigateTo + dash', 'Ép SAFEZONE, repath về tâm bo, có thể dash để về nhanh'],
+    ['Địch ở sau vật cản', 'Decision Tree + A*', 'Chọn ambush/chase và đi qua waypoint thay vì lao thẳng vào tường'],
+    ['Mục tiêu di chuyển khó đoán', 'KNN Predictor', 'Ước lượng hướng tương lai để bắn lead shot'],
+    ['Bot đồng minh mạnh đứng gần', 'learnFromOther', 'Sao chép một phần dataset, bias chiến thuật và tactical memory'],
+    ['Bot chết trong giao tranh', 'getDeathKnowledge / absorbDeathKnowledge', 'Bot còn sống kế thừa kinh nghiệm combat và score'],
+    ['Client online bị delay', 'Prediction + reconciliation', 'Tự di chuyển local trước, rồi sửa drift khi host gửi state'],
+    ['Zombie mất line-of-sight', 'Monster LOS/A* hybrid', 'Đổi từ lao thẳng sang pathfinding quanh vật cản']
+];
 let isHost = false;
 let myPlayerIndex = 0; // which player[] index is "me"
 let gameRunning = false;
@@ -1223,10 +1761,152 @@ class NetworkManager {
 // SCREEN MANAGEMENT
 // ================================================================
 function showScreen(name) {
+    if (name !== 'algorithm') previousNonAlgorithmScreen = name;
     currentScreen = name;
     document.getElementById('menu-screen').classList.toggle('hidden', name !== 'menu');
     document.getElementById('lobby-screen').classList.toggle('hidden', name !== 'lobby');
+    document.getElementById('algorithm-screen').classList.toggle('hidden', name !== 'algorithm');
     document.getElementById('game-ui').classList.toggle('hidden', name !== 'game');
+    canvas.style.display = (name === 'game') ? 'block' : 'none';
+}
+
+function renderAlgorithmDocs() {
+    const nav = document.getElementById('algo-nav');
+    const hero = document.getElementById('algo-hero-stats');
+    const overview = document.getElementById('algo-overview-steps');
+    const systems = document.getElementById('algo-system-cards');
+    const flows = document.getElementById('algo-combined-flows');
+    const scenarios = document.getElementById('algo-scenarios');
+    const matrix = document.getElementById('algo-matrix-body');
+    if (!nav || nav.dataset.ready === '1') return;
+
+    const navItems = [
+        ['#algorithm-screen', 'Tổng quan', 'Mô tả nhanh kiến trúc thuật toán'],
+        ['#algo-overview-section', 'Pipeline', 'Chuỗi xử lý đầy đủ theo từng frame'],
+        ['#algo-visual-section', 'Đồ hoạ', 'Sơ đồ trực quan cho từng hệ thống'],
+        ['#algo-systems-section', 'Thuật toán riêng lẻ', 'State Tree, KNN, A*, multiplayer...'],
+        ['#algo-combined-section', 'Kết hợp', 'Các tầng phối hợp ra quyết định'],
+        ['#algo-scenarios-section', 'Step by step', '3 tình huống mẫu để đọc nhanh'],
+        ['#algo-matrix-section', 'Ma trận', 'Input nào gọi thuật toán nào']
+    ];
+    nav.innerHTML = navItems.map(([href, title, sub]) => `<a href="${href}"><strong>${title}</strong><small>${sub}</small></a>`).join('');
+
+    hero.innerHTML = ALGORITHM_HERO_STATS.map(item => `
+        <div class="algo-stat">
+            <b>${item.label}</b>
+            <span>${item.value}</span>
+            <p style="margin:10px 0 0;color:#c9d7ee;line-height:1.5">${item.note}</p>
+        </div>
+    `).join('');
+
+    const pipelineGraphic = document.getElementById('algo-pipeline-graphic');
+    const stateTreeGraphic = document.getElementById('algo-state-tree-graphic');
+    const knnGraphic = document.getElementById('algo-knn-graphic');
+    const astarGraphic = document.getElementById('algo-astar-graphic');
+    const cycleGraphic = document.getElementById('algo-cycle-graphic');
+
+    pipelineGraphic.innerHTML = ALGORITHM_PIPELINE_GRAPHIC.map((item, index) => `${index ? '<div class="algo-pipeline-arrow">→</div>' : ''}<div class="algo-pipeline-node"><strong>${item.title}</strong><span>${item.desc}</span></div>`).join('');
+
+    stateTreeGraphic.innerHTML = `
+        <div class="algo-tree-root">
+            <strong>Context Snapshot</strong>
+            <span>hpRatio + threatDist + nearbyThreats + itemDist + zonePressure + outsideZone</span>
+        </div>
+        <div class="algo-tree-branches">
+            ${ALGORITHM_STATE_BRANCHES.map(branch => `<div class="algo-branch ${branch.cls}"><b>${branch.title}</b><small>${branch.desc}</small></div>`).join('')}
+        </div>
+        <div class="algo-visual-note">Nhìn đồ hoạ này có thể thấy: State Tree không điều khiển chuyển động trực tiếp, mà đóng vai trò như <b>bộ phân luồng quyết định</b> để các thuật toán phía sau biết phải làm gì tiếp.</div>
+    `;
+
+    knnGraphic.innerHTML = `
+        <div class="algo-feature-bars">
+            ${ALGORITHM_KNN_FEATURES.map(([label, value]) => `<div class="algo-feature-row"><label>${label}</label><div class="algo-feature-bar"><div class="algo-feature-fill" style="width:${value}%"></div></div><span>${value}</span></div>`).join('')}
+        </div>
+        <div class="algo-knn-neighbors">
+            <div class="algo-neighbor"><b>NN #1</b><small>dist 0.18</small></div>
+            <div class="algo-neighbor"><b>NN #2</b><small>dist 0.24</small></div>
+            <div class="algo-neighbor"><b>NN #3</b><small>dist 0.31</small></div>
+        </div>
+        <div class="algo-aim-output">Output: hợp nhất 3 hàng xóm gần nhất → chuẩn hoá vector → bắn lệch về phía mục tiêu sắp di chuyển tới.</div>
+    `;
+
+    astarGraphic.innerHTML = `
+        <div class="algo-grid-demo">
+            ${ALGORITHM_ASTAR_CELLS.map(cell => `<div class="algo-grid-cell ${cell === 'empty' ? '' : cell}"></div>`).join('')}
+        </div>
+        <div class="algo-grid-legend">
+            <span><i style="background:#22c55e"></i> Start</span>
+            <span><i style="background:#42a5f5"></i> Path</span>
+            <span><i style="background:#334155"></i> Obstacle</span>
+            <span><i style="background:#f97316"></i> Goal</span>
+        </div>
+        <div class="algo-visual-note">A* biến vị trí thật thành ô lưới, né obstacle, rồi trả lại waypoint để bot/quái đi từng bước. Khi target đổi chỗ hoặc entity bị kẹt, path sẽ được tính lại.</div>
+    `;
+
+    cycleGraphic.innerHTML = `
+        <div class="algo-cycle-ring">
+            ${ALGORITHM_CYCLE_STAGES.map(stage => `<div class="algo-cycle-stage"><b>${stage.title}</b><small>${stage.desc}</small></div>`).join('')}
+        </div>
+        <div class="algo-visual-note">Đây là lý do hệ AI trong repo này trông “thông minh hơn rule-based thuần”: nó không chỉ chọn luật, mà còn có nhánh học và phản hồi để điều chỉnh chất lượng hành vi.</div>
+    `;
+
+    overview.innerHTML = ALGORITHM_OVERVIEW_STEPS.map((step, index) => `
+        <article class="algo-step">
+            <div class="algo-step-no">${index + 1}</div>
+            <div>
+                <h4>${step.title}</h4>
+                <p>${step.body}</p>
+            </div>
+        </article>
+    `).join('');
+
+    systems.innerHTML = ALGORITHM_SYSTEMS.map(system => `
+        <article class="algo-card">
+            <h3>${system.title}</h3>
+            <p>${system.summary}</p>
+            <ul>${system.bullets.map(item => `<li>${item}</li>`).join('')}</ul>
+            <div class="algo-mini-grid">
+                <div class="algo-mini-card">
+                    <b>Step by step</b>
+                    <p>${system.steps.join('<br>')}</p>
+                </div>
+            </div>
+            <div class="algo-tag-row">${system.tags.map(tag => `<span class="algo-tag">${tag}</span>`).join('')}</div>
+        </article>
+    `).join('');
+
+    flows.innerHTML = ALGORITHM_COMBINED_FLOWS.map(flow => `
+        <article class="algo-flow-card">
+            <h3>${flow.title}</h3>
+            <ul>${flow.items.map(item => `<li>${item}</li>`).join('')}</ul>
+        </article>
+    `).join('');
+
+    scenarios.innerHTML = ALGORITHM_SCENARIOS.map(scenario => `
+        <article class="algo-card">
+            <h3>${scenario.title}</h3>
+            <ul>${scenario.steps.map(item => `<li>${item}</li>`).join('')}</ul>
+        </article>
+    `).join('');
+
+    matrix.innerHTML = ALGORITHM_MATRIX.map(row => `
+        <tr>
+            <td>${row[0]}</td>
+            <td>${row[1]}</td>
+            <td>${row[2]}</td>
+        </tr>
+    `).join('');
+
+    nav.dataset.ready = '1';
+}
+
+function showAlgorithmDocs() {
+    renderAlgorithmDocs();
+    showScreen('algorithm');
+}
+
+function backFromAlgorithmDocs() {
+    showScreen(previousNonAlgorithmScreen || 'menu');
 }
 
 function backToMenu() { showScreen('menu'); }
