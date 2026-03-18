@@ -145,6 +145,7 @@
     <div class="game-subtitle">Battle Royale with AI Intelligence System</div>
     <button class="menu-btn btn-solo" onclick="startSoloGame()">🎮 Chơi Đơn (Solo)</button>
     <button class="menu-btn btn-multi" onclick="showLobby()">🌐 Chơi Online (Multiplayer)</button>
+    <button class="menu-btn" style="background:#0f766e;color:white;border-color:#2dd4bf" onclick="window.location.href='teaching_algorithms.html'">Mở web giảng dạy thuật toán</button>
 </div>
 
 <!-- ====== LOBBY SCREEN ====== -->
@@ -223,7 +224,7 @@
             <ul>
                 <li><b>Combat:</b> đủ điều kiện giao tranh.</li>
                 <li><b>Survival:</b> máu thấp, bị vây, cần rút lui.</li>
-                <li><b>Resource:</b> ưu tiên nhặt tài nguyên.</li>
+                <li><b>Resource:</b> săn quái để tạo loot, sau đó nhặt tài nguyên rơi ra.</li>
                 <li><b>Explore:</b> tuần tra khi ít mục tiêu.</li>
                 <li><b>SafeZone:</b> gần/ngoài bo thì <b>ưu tiên số 1</b> quay về vùng an toàn.</li>
             </ul>
@@ -234,7 +235,7 @@
             <ul>
                 <li><b>State Tree</b> vẫn chọn macro state lớn (SAFEZONE/SURVIVAL/COMBAT/RESOURCE/EXPLORE).</li>
                 <li><b>Decision Tree</b> chọn tactic con trong COMBAT/SURVIVAL (aggressive attack, kite, strafe, ambush, retreat fire, dash escape...).</li>
-                <li><b>A*</b> dùng khi cần đi vòng obstacle: bot về safe zone, đi nhặt item, đuổi mục tiêu khi mất line-of-sight, quái truy đuổi player.</li>
+                <li><b>A*</b> dùng khi cần đi vòng obstacle: bot về safe zone, đi farm quái/nhặt item, đuổi mục tiêu khi mất line-of-sight, quái truy đuổi player.</li>
             </ul>
         </div>
         <div class="ai-doc-flow">
@@ -263,6 +264,59 @@ let netManager = null;
 
 const PLAYER_COLORS = ['#2196F3', '#4CAF50', '#ff9800', '#e91e63'];
 const PLAYER_NAMES_MP = ['Player 1', 'Player 2', 'Player 3', 'Player 4'];
+
+const ITEM_TYPES = {
+    medkit: { label: 'Medkit', color: '#ff6b6b', symbol: '🩹' },
+    ammo: { label: 'Ammo', color: '#ffd166', symbol: '🔸' },
+    shield: { label: 'Shield', color: '#4fc3f7', symbol: '🛡️' },
+    boost: { label: 'Boost', color: '#81c784', symbol: '⚡' }
+};
+
+const MONSTER_TYPES = {
+    zombie: { label: 'Zombie', color: '#ff3333', hp: 30, speed: 0.8, damage: 10, symbol: '🧟', dropBias: ['medkit','ammo'] },
+    brute: { label: 'Brute', color: '#ff7043', hp: 55, speed: 0.55, damage: 18, symbol: '👹', dropBias: ['shield','medkit'] },
+    crawler: { label: 'Crawler', color: '#ab47bc', hp: 22, speed: 1.15, damage: 7, symbol: '🕷️', dropBias: ['boost','ammo'] },
+    spitter: { label: 'Spitter', color: '#66bb6a', hp: 28, speed: 0.9, damage: 9, symbol: '🐍', dropBias: ['ammo','boost'] }
+};
+
+function randomMonsterType() {
+    let r = Math.random();
+    if (r < 0.4) return 'zombie';
+    if (r < 0.62) return 'crawler';
+    if (r < 0.82) return 'spitter';
+    return 'brute';
+}
+
+function randomItemType(preferred = []) {
+    let weighted = preferred.concat(['medkit', 'ammo', 'shield', 'boost']);
+    return weighted[Math.floor(Math.random() * weighted.length)];
+}
+
+function pointBlockedByObstacle(x, y, obstacles, pad = 20) {
+    return obstacles.some(o => x >= o.x - pad && x <= o.x + o.w + pad && y >= o.y - pad && y <= o.y + o.h + pad);
+}
+
+function spawnInitialItems(count, obstacles) {
+    let out = [];
+    for (let i = 0; i < count; i++) {
+        let tries = 0;
+        while (tries < 30) {
+            tries++;
+            let x = 120 + Math.random() * (WORLD_WIDTH - 240);
+            let y = 120 + Math.random() * (WORLD_HEIGHT - 240);
+            if (pointBlockedByObstacle(x, y, obstacles, 28)) continue;
+            out.push(new Item(x, y, randomItemType()));
+            break;
+        }
+    }
+    return out;
+}
+
+function tryDropLoot(x, y, monsterType) {
+    let cfg = MONSTER_TYPES[monsterType] || MONSTER_TYPES.zombie;
+    if (Math.random() < 0.7) items.push(new Item(x, y, randomItemType(cfg.dropBias)));
+}
+
 
 // ================================================================
 // CANVAS SETUP
@@ -561,7 +615,7 @@ class BotBrain {
         let c = this.stateTreeScores;
         c.COMBAT = (context.threatDist < context.attackRange ? 3 : 0) + (context.hpRatio > 0.45 ? 1 : -1) + this.aggressionBias;
         c.SURVIVAL = (context.hpRatio < this.fleeThreshold ? 4 : 0) + (context.nearbyThreats > 2 ? 2 : 0) + (context.zonePressure ? 2 : 0);
-        c.RESOURCE = (context.itemDist < 450 ? 2 : 0) + (context.hpRatio < 0.8 ? 1 : 0);
+        c.RESOURCE = (context.itemDist < 450 ? 1.5 : 0) + (context.monsterDist < 520 ? 2.5 : 0) + (context.hpRatio < 0.85 ? 0.8 : 0);
         c.EXPLORE = 1 + (context.threatDist > 650 ? 1.5 : 0);
         c.SAFEZONE = (context.outsideZone ? 8 : 0) + (context.zonePressure ? 4 : 0);
         let best = Object.entries(c).sort((a, b) => b[1] - a[1])[0];
@@ -761,6 +815,7 @@ class BotPlayer extends Player {
         let distToZone = Math.hypot(this.x-zone.x, this.y-zone.y);
         let allThreats = players.filter(p => p !== this && !p.isDead).concat(monsters);
         let closestThreat = this.getClosest(allThreats);
+        let closestMonster = this.getClosest(monsters);
         let closestItem = this.getClosest(items);
         let nearbyThreats = allThreats.filter(t => !t.isDead && Math.hypot(this.x-t.x, this.y-t.y) < 400).length;
         let smartAttackRange = 400 + (this.brain.iq/100)*150;
@@ -770,6 +825,7 @@ class BotPlayer extends Player {
             threatDist: closestThreat ? closestThreat.dist : 9999,
             nearbyThreats,
             itemDist: closestItem ? closestItem.dist : 9999,
+            monsterDist: closestMonster ? closestMonster.dist : 9999,
             attackRange: smartAttackRange,
             zonePressure: distToZone > zone.radius - 90,
             outsideZone: distToZone > zone.radius - 10,
@@ -843,9 +899,27 @@ class BotPlayer extends Player {
                 } else if (this.ammo <= 0 && !this.isReloading) this.reload();
             }
         } else if (macro === 'RESOURCE') {
-            this.brain.currentTactic = 'loot route';
-            if (closestItem && closestItem.dist < 700) this.navigateTo(closestItem.x, closestItem.y, obstacles, 'resource_item', false);
-            else this.wander();
+            if (closestMonster && closestMonster.dist < 650) {
+                let target = closestMonster.entity;
+                let los = this.hasLineOfSight(target, obstacles);
+                this.brain.currentTactic = 'farm monster';
+                if (!los) this.navigateTo(target.x, target.y, obstacles, 'resource_monster_hunt', false);
+                else {
+                    if (closestMonster.dist > 170) this.navigateTo(target.x, target.y, obstacles, 'resource_monster_push', false);
+                    else if (closestMonster.dist < 110) this.moveDir(this.x-target.x, this.y-target.y);
+                    let shotRate = this.fireRate * 0.9;
+                    if (now - this.lastShot > shotRate) {
+                        if (this.ammo > 0 && !this.isReloading) this.shoot(target.x, target.y, projectiles);
+                        else if (this.ammo <= 0 && !this.isReloading) this.reload();
+                    }
+                }
+            } else if (closestItem && closestItem.dist < 700) {
+                this.brain.currentTactic = 'collect loot';
+                this.navigateTo(closestItem.x, closestItem.y, obstacles, 'resource_item', false);
+            } else {
+                this.brain.currentTactic = 'search prey';
+                this.wander();
+            }
         } else {
             this.brain.currentTactic = this.brain.isDangerousArea(this.x, this.y) ? 'avoid hotspot' : 'patrol';
             this.wander();
@@ -897,9 +971,12 @@ class BotPlayer extends Player {
 }
 
 class Monster extends Entity {
-    constructor(x, y) {
-        super(x, y, 10, '#ff3333', 30, "Zombie");
-        this.speed = 0.8; this.damage = 10; this.attackRate = 1000; this.lastAttack = 0;
+    constructor(x, y, type = 'zombie') {
+        let cfg = MONSTER_TYPES[type] || MONSTER_TYPES.zombie;
+        super(x, y, type === 'brute' ? 13 : 10, cfg.color, cfg.hp, cfg.label);
+        this.monsterType = type;
+        this.monsterConfig = cfg;
+        this.speed = cfg.speed; this.damage = cfg.damage; this.attackRate = 1000; this.lastAttack = 0;
         this.pathCache = { waypoints: [], idx: 0, lastCalc: 0, tx: x, ty: y };
     }
     update(players, monsters, obstacles) {
@@ -950,8 +1027,8 @@ class Monster extends Entity {
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
 
-        // đầu zombie
-        ctx.fillText("🧟", this.x, this.y + wobble);
+        // sprite quái theo chủng loại
+        ctx.fillText(this.monsterConfig.symbol || "🧟", this.x, this.y + wobble);
          let barWidth = 30;
          let barHeight = 4;
          let hpPercent = this.hp / this.maxHp;
@@ -990,11 +1067,24 @@ class Projectile {
 }
 
 class Item {
-    constructor(x, y) { this.x = x; this.y = y; this.radius = 10; this.isPicked = false; }
+    constructor(x, y, type = 'medkit') {
+        this.x = x; this.y = y; this.radius = 11; this.isPicked = false; this.type = type;
+        this.config = ITEM_TYPES[type] || ITEM_TYPES.medkit;
+    }
+    applyTo(player) {
+        if (this.type === 'medkit') player.hp = Math.min(player.maxHp, player.hp + 35);
+        else if (this.type === 'ammo') player.ammo = Math.min(player.maxAmmo, player.ammo + 15);
+        else if (this.type === 'shield') player.hp = Math.min(player.maxHp, player.hp + 18);
+        else if (this.type === 'boost') {
+            player.lastDash = Math.max(0, Date.now() - player.dashCooldown + 350);
+            player.hp = Math.min(player.maxHp, player.hp + 10);
+        }
+    }
     draw(ctx) {
         ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
-        ctx.fillStyle = '#ff99cc'; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
-        ctx.fillStyle = '#fff'; ctx.fillRect(this.x-1, this.y-5, 2, 10); ctx.fillRect(this.x-5, this.y-1, 10, 2);
+        ctx.fillStyle = this.config.color; ctx.fill(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.font = '13px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(this.config.symbol, this.x, this.y + 0.5);
     }
 }
 
@@ -1365,6 +1455,7 @@ function startSoloGame() {
     projectiles = []; items = []; monsters = [];
     let mapSeed = Math.floor(Math.random() * 999999) + 1;
     obstacles = createObstaclesSeed(mapSeed);
+    items = spawnInitialItems(14, obstacles);
 
     let pad = 300;
     player1 = new Player(pad, pad, false, "Player 1");
@@ -1387,7 +1478,7 @@ function startSoloGame() {
             if (Math.random() < 0.5) { mx = Math.random()<0.5 ? camera.x-100 : camera.x+camera.width+100; my = camera.y+Math.random()*camera.height; }
             else { mx = camera.x+Math.random()*camera.width; my = Math.random()<0.5 ? camera.y-100 : camera.y+camera.height+100; }
             mx = Math.max(0, Math.min(WORLD_WIDTH, mx)); my = Math.max(0, Math.min(WORLD_HEIGHT, my));
-            monsters.push(new Monster(mx, my));
+            monsters.push(new Monster(mx, my, randomMonsterType()));
         }
     }, 1500);
 
@@ -1403,6 +1494,7 @@ function startMultiplayerHostGame(mapSeed, totalPlayers, totalBots, playerInfos)
     safeZone = new SafeZone();
     projectiles = []; items = []; monsters = [];
     obstacles = createObstaclesSeed(mapSeed);
+    items = spawnInitialItems(14, obstacles);
 
     let pad = 300;
     let spawnPositions = [
@@ -1454,7 +1546,7 @@ function startMultiplayerHostGame(mapSeed, totalPlayers, totalBots, playerInfos)
             if (Math.random() < 0.5) { mx = Math.random()<0.5 ? camera.x-100 : camera.x+camera.width+100; my = camera.y+Math.random()*camera.height; }
             else { mx = camera.x+Math.random()*camera.width; my = Math.random()<0.5 ? camera.y-100 : camera.y+camera.height+100; }
             mx = Math.max(0, Math.min(WORLD_WIDTH, mx)); my = Math.max(0, Math.min(WORLD_HEIGHT, my));
-            monsters.push(new Monster(mx, my));
+            monsters.push(new Monster(mx, my, randomMonsterType()));
         }
     }, 1500);
 
@@ -1476,6 +1568,7 @@ function startMultiplayerClientGame(data) {
     safeZone = new SafeZone();
     projectiles = []; items = []; monsters = [];
     obstacles = createObstaclesSeed(data.mapSeed);
+    items = spawnInitialItems(14, obstacles);
 
     let pad = 300;
     let spawnPositions = [
@@ -1547,14 +1640,14 @@ function serializeGameState() {
         })),
         monsters: monsters.filter(m => !m.isDead).map(m => ({
             x: Math.round(m.x*10)/10, y: Math.round(m.y*10)/10,
-            hp: Math.round(m.hp*10)/10, isDead: false
+            hp: Math.round(m.hp*10)/10, isDead: false, monsterType: m.monsterType
         })),
         projectiles: projectiles.filter(p => p.life > 5).slice(-60).map(p => ({
             x: Math.round(p.x), y: Math.round(p.y),
             vx: Math.round(p.vx*100)/100, vy: Math.round(p.vy*100)/100,
             color: p.color, life: p.life
         })),
-        items: items.filter(i => !i.isPicked).map(it => ({ x: Math.round(it.x), y: Math.round(it.y) })),
+        items: items.filter(i => !i.isPicked).map(it => ({ x: Math.round(it.x), y: Math.round(it.y), type: it.type })),
         zone: { x: safeZone.x, y: safeZone.y, radius: Math.round(safeZone.radius*10)/10 },
         gamePaused: gamePaused
     };
@@ -1600,11 +1693,12 @@ function applyGameState(state) {
     player1 = players[myPlayerIndex];
 
     // Update monsters - reconcile count
-    while (monsters.length < state.monsters.length) monsters.push(new Monster(0, 0));
+    while (monsters.length < state.monsters.length) monsters.push(new Monster(0, 0, "zombie"));
     while (monsters.length > state.monsters.length) monsters.pop();
     state.monsters.forEach((sm, i) => {
         if (i < monsters.length) {
             let m = monsters[i];
+            if (sm.monsterType && m.monsterType !== sm.monsterType) monsters[i] = m = new Monster(m.x, m.y, sm.monsterType);
             if (sm.isDead) { m.isDead = true; return; }
             m.x += (sm.x - m.x) * 0.35;
             m.y += (sm.y - m.y) * 0.35;
@@ -1622,7 +1716,7 @@ function applyGameState(state) {
     clientProjectiles = clientProjectiles.filter(cp => cp.life > 30); // keep only very recent ones
 
     // Update items
-    items = state.items.map(si => new Item(si.x, si.y));
+    items = state.items.map(si => new Item(si.x, si.y, si.type || "medkit"));
 
     // Update safe zone
     if (state.zone) {
@@ -1664,7 +1758,7 @@ function gameLoop() {
     items.forEach(item => {
         players.forEach(p => {
             if (!p.isDead && Math.hypot(p.x-item.x, p.y-item.y) < p.radius+item.radius) {
-                p.hp = Math.min(p.maxHp, p.hp + 30); item.isPicked = true;
+                item.applyTo(p); item.isPicked = true;
             }
         });
     });
@@ -1679,7 +1773,7 @@ function gameLoop() {
                 m.takeDamage(proj.damage); proj.life = 0;
                 if (proj.owner && proj.owner.isBot && proj.owner.brain) proj.owner.brain.recordDamageDealt(proj.damage);
                 if (m.isDead) {
-                    if (Math.random() < 0.25) items.push(new Item(m.x, m.y));
+                    tryDropLoot(m.x, m.y, m.monsterType);
                     if (proj.owner && proj.owner.isBot && proj.owner.brain) proj.owner.brain.recordKill();
                 }
             }
@@ -1868,9 +1962,13 @@ function updateStatusPanel() {
     html += `<div class="stat-item"><span class="stat-label">Số quái vật:</span><span class="stat-value">${monsters.length}</span></div>`;
     html += `<div class="stat-item"><span class="stat-label">Bán kính bo:</span><span class="stat-value">${safeZone ? Math.round(safeZone.radius) : '--'}m</span></div>`;
     html += `<div class="stat-item"><span class="stat-label">Vật phẩm:</span><span class="stat-value">${items.length}</span></div>`;
+    let monsterMix = {}; monsters.forEach(m => { monsterMix[m.monsterType || 'zombie'] = (monsterMix[m.monsterType || 'zombie'] || 0) + 1; });
+    let itemMix = {}; items.forEach(i => { itemMix[i.type || 'medkit'] = (itemMix[i.type || 'medkit'] || 0) + 1; });
     if (isMultiplayer) {
         html += `<div class="stat-item"><span class="stat-label">Chế độ:</span><span class="stat-value" style="color:#42a5f5">Online ${isHost?'(Host)':'(Client)'}</span></div>`;
     }
+    if (Object.keys(monsterMix).length) html += `<div class="stat-item"><span class="stat-label">Loại quái:</span><span class="stat-value">${Object.entries(monsterMix).map(([k,v]) => `${k}:${v}`).join(' | ')}</span></div>`;
+    if (Object.keys(itemMix).length) html += `<div class="stat-item"><span class="stat-label">Loot:</span><span class="stat-value">${Object.entries(itemMix).map(([k,v]) => `${k}:${v}`).join(' | ')}</span></div>`;
     html += '</div>';
     html += '<div class="stat-group">';
     html += `<h4 style="margin:0 0 5px 0;font-size:12px;color:#ffeb3b;text-transform:uppercase">Mô hình KNN (AI Predictor)</h4>`;
