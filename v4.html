@@ -98,40 +98,35 @@
         .stat-label { font-weight: 600; color: #ddd; }
         .stat-value { color: #fff; text-align: right; }
         .badge { display: inline-block; padding: 2px 6px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-left: 5px; }
-        .badge.state-attack { background: #ff4444; color: white; }
-        .badge.state-flee { background: #ff9800; color: white; }
-        .badge.state-zone { background: #00bcd4; color: white; }
-        .badge.state-wander { background: #888; color: white; }
-        .badge.state-loot { background: #9c27b0; color: white; }
+        .badge.state-combat { background: #ff4444; color: white; }
+        .badge.state-survival { background: #ff9800; color: white; }
+        .badge.state-resource { background: #9c27b0; color: white; }
+        .badge.state-explore { background: #607d8b; color: white; }
+        .badge.state-safezone { background: #00bcd4; color: white; }
 
-        #algo-toggle {
-            position: absolute; top: 80px; left: 10px; z-index: 15;
-            background: rgba(10, 10, 25, 0.9); border: 1px solid #335; border-radius: 6px;
-            color: #7ecfff; font-size: 13px; font-weight: 700; padding: 6px 14px;
-            cursor: pointer; pointer-events: auto; transition: background 0.2s;
+        #ai-doc-modal {
+            position: fixed; inset: 0; display: none; align-items: center; justify-content: center;
+            background: rgba(0, 0, 0, 0.75); z-index: 200;
         }
-        #algo-toggle:hover { background: rgba(30, 30, 60, 0.95); }
-
-        #algo-panel {
-            position: absolute; top: 115px; left: 10px; width: 310px; max-height: calc(85vh - 40px);
-            background: rgba(10, 10, 25, 0.9); border: 1px solid #335; border-radius: 8px;
-            padding: 12px; box-shadow: 0 4px 12px rgba(0,0,100,0.4); overflow-y: auto;
-            pointer-events: none; z-index: 10; backdrop-filter: blur(4px); font-size: 12px;
-            transition: opacity 0.25s, transform 0.25s;
+        #ai-doc-modal.show { display: flex; }
+        .ai-doc-box {
+            width: min(820px, 90vw); max-height: 85vh; overflow-y: auto; padding: 18px 22px;
+            background: #0f1524; border: 1px solid #304368; border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,0.5);
         }
-        #algo-panel.hidden { opacity: 0; transform: translateX(-20px); pointer-events: none; visibility: hidden; }
-        #algo-panel h3 { margin: 0 0 8px 0; font-size: 14px; color: #7ecfff; text-transform: uppercase; border-bottom: 1px solid #335; padding-bottom: 5px; letter-spacing: 1px; }
-        #algo-panel h4 { margin: 8px 0 4px 0; font-size: 12px; color: #ffeb3b; }
-        .algo-bot-section { margin-bottom: 10px; padding: 8px; background: rgba(255,255,255,0.04); border-radius: 6px; border-left: 3px solid #555; }
-        .algo-bot-section.high-iq { border-left-color: #4CAF50; }
-        .algo-bot-section.mid-iq { border-left-color: #ff9800; }
-        .algo-bot-section.low-iq { border-left-color: #f44336; }
-        .algo-row { display: flex; justify-content: space-between; padding: 2px 0; color: #ccc; }
-        .algo-row .val { color: #fff; font-weight: 600; }
-        .iq-bar-bg { width: 100%; height: 6px; background: #222; border-radius: 3px; margin: 3px 0; }
-        .iq-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
-        .knowledge-log { max-height: 80px; overflow-y: auto; font-size: 11px; color: #8af; margin-top: 6px; padding: 4px; background: rgba(0,0,0,0.3); border-radius: 4px; }
-        .knowledge-log div { padding: 1px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .ai-doc-box h3 { margin: 0 0 10px 0; color: #7ecfff; }
+        .ai-doc-box p, .ai-doc-box li { color: #d2def5; font-size: 14px; line-height: 1.4; }
+        .ai-doc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .ai-doc-card { background: rgba(255,255,255,0.04); border: 1px solid #2f3b58; border-radius: 8px; padding: 10px; }
+        .ai-doc-card b { color: #ffeb3b; }
+        .ai-doc-flow { margin-top: 10px; padding: 10px; border: 1px solid #2f3b58; border-radius: 8px; background: rgba(255,255,255,0.03); }
+        .ai-doc-flow h4 { margin: 0 0 6px 0; color: #ffd54f; font-size: 13px; }
+        .ai-doc-flow code { color: #9be7ff; }
+        .ai-doc-live { margin-top: 8px; font-size: 12px; color: #9bb3db; }
+        .ai-metric { margin-top: 6px; }
+        .ai-metric label { display: flex; justify-content: space-between; color: #c8d8f7; font-size: 12px; }
+        .ai-metric .bar { width: 100%; height: 6px; background: #1c2943; border-radius: 999px; overflow: hidden; }
+        .ai-metric .fill { height: 100%; background: linear-gradient(90deg, #42a5f5, #7ecfff); }
+        .ai-doc-close { margin-top: 12px; }
 
         /* Multiplayer ping indicator */
         #ping-indicator {
@@ -197,19 +192,13 @@
         <div id="ammo">Đạn: 30/30</div>
     </div>
 
-    <button id="algo-toggle" onclick="toggleAlgoPanel()">🧠 Intelligence ▼</button>
-    <div id="algo-panel">
-        <h3>🧠 Bot Intelligence Monitor</h3>
-        <div id="algo-content"></div>
-    </div>
-
     <div id="status-panel">
         <h3>Telemetries (System Status)</h3>
         <div id="status-content"></div>
     </div>
 
     <div id="info">
-        <b>Hướng dẫn:</b> WASD di chuyển | Chuột trái bắn | SPACE lướt (Dash) | R nạp đạn<br>
+        <b>Hướng dẫn:</b> WASD di chuyển | Chuột trái bắn | SPACE lướt (Dash) | R nạp đạn | O bật/tắt đường A* của quái<br>
         <i>Bản đồ 3000x3000. AI có Line of Sight. Nấp sau khối bê tông để né đạn.</i>
     </div>
 
@@ -224,6 +213,42 @@
 </div>
 
 <canvas id="gameCanvas"></canvas>
+
+<div id="ai-doc-modal">
+    <div class="ai-doc-box">
+        <h3>📘 State Tree + Online KNN</h3>
+        <p><b>Tóm tắt dễ hiểu:</b> AI chạy theo 3 bước lặp liên tục: <b>Nhìn trạng thái</b> → <b>Chọn nhánh hành vi</b> → <b>Học từ kết quả</b>.</p>
+        <div class="ai-doc-flow">
+            <h4>1) State Tree quyết định cấp cao (macro)</h4>
+            <ul>
+                <li><b>Combat:</b> đủ điều kiện giao tranh.</li>
+                <li><b>Survival:</b> máu thấp, bị vây, cần rút lui.</li>
+                <li><b>Resource:</b> ưu tiên nhặt tài nguyên.</li>
+                <li><b>Explore:</b> tuần tra khi ít mục tiêu.</li>
+                <li><b>SafeZone:</b> gần/ngoài bo thì <b>ưu tiên số 1</b> quay về vùng an toàn.</li>
+            </ul>
+            <p>Điểm nhánh được tính từ ngữ cảnh hiện tại: HP, khoảng cách địch, số địch gần, khoảng cách item, áp lực bo.</p>
+        </div>
+        <div class="ai-doc-flow">
+            <h4>2) Micro tactic (Decision Tree) + di chuyển A*</h4>
+            <ul>
+                <li><b>State Tree</b> vẫn chọn macro state lớn (SAFEZONE/SURVIVAL/COMBAT/RESOURCE/EXPLORE).</li>
+                <li><b>Decision Tree</b> chọn tactic con trong COMBAT/SURVIVAL (aggressive attack, kite, strafe, ambush, retreat fire, dash escape...).</li>
+                <li><b>A*</b> dùng khi cần đi vòng obstacle: bot về safe zone, đi nhặt item, đuổi mục tiêu khi mất line-of-sight, quái truy đuổi player.</li>
+            </ul>
+        </div>
+        <div class="ai-doc-flow">
+            <h4>3) Online KNN học thời gian thực</h4>
+            <p><b>Dữ liệu thu thập mỗi pha bắn:</b> <code>[distance, targetHp, targetSpeed, isDashing, isChased, relativeAngle]</code> + nhãn hướng bắn <code>[dirX, dirY]</code>.</p>
+            <p><b>Cách tính:</b> tìm K mẫu gần nhất (k=3), lấy trung bình hướng để dự đoán hướng di chuyển mục tiêu.</p>
+            <p><b>Trọng số khoảng cách (ví dụ):</b> distance*0.45, targetHp*1.8, targetSpeed*1.4, isDashing*16, isChased*45, relativeAngle*0.9.</p>
+            <p><b>Cập nhật học:</b> mỗi ~2.5s/pulse, hệ thống ghi nhận accuracy, số mẫu KNN, score nhánh để điều chỉnh hành vi vòng sau.</p>
+        </div>
+        <div class="ai-doc-live">Realtime mỗi ~250ms trong khi cửa sổ đang mở.</div>
+        <div class="ai-doc-grid" id="ai-doc-stats"></div>
+        <button class="game-btn ai-doc-close" onclick="toggleAIDocModal(false)">Đóng (P)</button>
+    </div>
+</div>
 
 <script>
 // ================================================================
@@ -291,19 +316,133 @@ function lineRectIntersect(x1, y1, x2, y2, rx, ry, rw, rh) {
 }
 
 // ================================================================
+// PATHFINDING (A* GRID)
+// ================================================================
+const PATH_GRID_SIZE = 60;
+const Pathfinding = {
+    cacheKey: '',
+    cols: 0,
+    rows: 0,
+    blocked: [],
+    build(obstacles) {
+        let key = `${obstacles.length}|` + obstacles.map(o => `${Math.round(o.x)}:${Math.round(o.y)}:${Math.round(o.w)}:${Math.round(o.h)}`).join('|');
+        if (this.cacheKey === key) return;
+        this.cacheKey = key;
+        this.cols = Math.ceil(WORLD_WIDTH / PATH_GRID_SIZE);
+        this.rows = Math.ceil(WORLD_HEIGHT / PATH_GRID_SIZE);
+        this.blocked = new Array(this.cols * this.rows).fill(false);
+        for (let y = 0; y < this.rows; y++) {
+            for (let x = 0; x < this.cols; x++) {
+                let wx = x * PATH_GRID_SIZE + PATH_GRID_SIZE * 0.5;
+                let wy = y * PATH_GRID_SIZE + PATH_GRID_SIZE * 0.5;
+                let blocked = obstacles.some(o => wx >= o.x && wx <= o.x + o.w && wy >= o.y && wy <= o.y + o.h);
+                this.blocked[y * this.cols + x] = blocked;
+            }
+        }
+    },
+    toCell(x, y) {
+        return {
+            cx: Math.max(0, Math.min(this.cols - 1, Math.floor(x / PATH_GRID_SIZE))),
+            cy: Math.max(0, Math.min(this.rows - 1, Math.floor(y / PATH_GRID_SIZE)))
+        };
+    },
+    toWorld(cx, cy) {
+        return { x: cx * PATH_GRID_SIZE + PATH_GRID_SIZE * 0.5, y: cy * PATH_GRID_SIZE + PATH_GRID_SIZE * 0.5 };
+    },
+    idx(cx, cy) { return cy * this.cols + cx; },
+    walkable(cx, cy) {
+        if (cx < 0 || cy < 0 || cx >= this.cols || cy >= this.rows) return false;
+        return !this.blocked[this.idx(cx, cy)];
+    },
+    findNearestWalkable(cx, cy, maxRadius = 6) {
+        if (this.walkable(cx, cy)) return { cx, cy };
+        for (let r = 1; r <= maxRadius; r++) {
+            for (let y = cy - r; y <= cy + r; y++) {
+                for (let x = cx - r; x <= cx + r; x++) {
+                    if (Math.abs(x - cx) !== r && Math.abs(y - cy) !== r) continue;
+                    if (this.walkable(x, y)) return { cx: x, cy: y };
+                }
+            }
+        }
+        return null;
+    },
+    heuristic(ax, ay, bx, by) { return Math.abs(ax - bx) + Math.abs(ay - by); },
+    findPath(sx, sy, tx, ty, obstacles, maxSteps = 1800) {
+        this.build(obstacles);
+        let s = this.toCell(sx, sy), t = this.toCell(tx, ty);
+        if (!this.walkable(s.cx, s.cy)) {
+            let sn = this.findNearestWalkable(s.cx, s.cy, 4);
+            if (!sn) return [];
+            s = sn;
+        }
+        if (!this.walkable(t.cx, t.cy)) {
+            let tn = this.findNearestWalkable(t.cx, t.cy, 8);
+            if (!tn) return [];
+            t = tn;
+        }
+        let open = [{ cx: s.cx, cy: s.cy, g: 0, f: this.heuristic(s.cx, s.cy, t.cx, t.cy), parent: null }];
+        let closed = new Set();
+        let best = new Map();
+        best.set(this.idx(s.cx, s.cy), 0);
+        let dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+        let steps = 0;
+
+        while (open.length && steps < maxSteps) {
+            steps++;
+            let bestI = 0;
+            for (let i = 1; i < open.length; i++) if (open[i].f < open[bestI].f) bestI = i;
+            let cur = open.splice(bestI, 1)[0];
+            let curId = this.idx(cur.cx, cur.cy);
+            if (closed.has(curId)) continue;
+            closed.add(curId);
+            if (cur.cx === t.cx && cur.cy === t.cy) {
+                let out = [];
+                let n = cur;
+                while (n) { out.push(this.toWorld(n.cx, n.cy)); n = n.parent; }
+                out.reverse();
+                return out;
+            }
+            for (let [dx, dy] of dirs) {
+                let nx = cur.cx + dx, ny = cur.cy + dy;
+                if (!this.walkable(nx, ny)) continue;
+                let nid = this.idx(nx, ny);
+                if (closed.has(nid)) continue;
+                let ng = cur.g + 1;
+                if (best.has(nid) && best.get(nid) <= ng) continue;
+                best.set(nid, ng);
+                open.push({ cx: nx, cy: ny, g: ng, f: ng + this.heuristic(nx, ny, t.cx, t.cy), parent: cur });
+            }
+        }
+        return [];
+    }
+};
+
+// ================================================================
 // KNN SYSTEM
 // ================================================================
 class KNNPredictor {
-    constructor() { this.dataset = []; this.maxData = 200; this.lastPredictTime = 0; this.predictions = 0; this.hits = 0; }
-    record(distance, playerHp, isChased, dirX, dirY) {
+    constructor() { this.dataset = []; this.maxData = 260; this.lastPredictTime = 0; this.predictions = 0; this.hits = 0; }
+    record(distance, targetHp, targetSpeed, isDashing, isChased, relativeAngle, dirX, dirY) {
         if (this.dataset.length > this.maxData) this.dataset.shift();
-        this.dataset.push({ features: [distance, playerHp, isChased ? 1 : 0], label: { x: dirX, y: dirY }, time: Date.now() });
+        this.dataset.push({
+            features: [distance, targetHp, targetSpeed, isDashing ? 1 : 0, isChased ? 1 : 0, relativeAngle],
+            label: { x: dirX, y: dirY },
+            time: Date.now()
+        });
     }
-    predict(distance, playerHp, isChased, k = 3) {
+    predict(distance, targetHp, targetSpeed, isDashing, isChased, relativeAngle, k = 3) {
         if (this.dataset.length < 5) return null;
         this.lastPredictTime = Date.now(); this.predictions++;
         let distances = this.dataset.map(data => {
-            let d = Math.sqrt(Math.pow(data.features[0]-distance,2)*0.5 + Math.pow(data.features[1]-playerHp,2)*2.0 + Math.pow(data.features[2]-(isChased?1:0),2)*50);
+            let f = data.features;
+            let d = Math.sqrt(
+                Math.pow(f[0]-distance,2)*0.45 +
+                Math.pow(f[1]-targetHp,2)*1.8 +
+                Math.pow(f[2]-targetSpeed,2)*1.4 +
+                Math.pow(f[3]-(isDashing?1:0),2)*16 +
+                Math.pow(f[4]-(isChased?1:0),2)*45 +
+                Math.pow(f[5]-relativeAngle,2)*0.9
+            );
             return { distance: d, label: data.label };
         });
         distances.sort((a,b) => a.distance - b.distance);
@@ -330,16 +469,27 @@ class BotBrain {
         this.survivalTime = Date.now(); this.knowledgeLog = []; this.maxLogSize = 20;
         this.learnCooldown = 0; this.tacticalMemory = []; this.maxTactical = 30;
         this.preferredRange = 280; this.aggressionBias = 0.5; this.fleeThreshold = 0.3;
+        this.currentMacroState = 'EXPLORE'; this.currentTactic = 'patrol';
+        this.stateTreeScores = { COMBAT: 0, SURVIVAL: 0, RESOURCE: 0, EXPLORE: 0, SAFEZONE: 0 };
+        this.combatPhaseShots = 0; this.combatPhaseHits = 0;
+        this.lastLearningPulse = Date.now();
+        this.learningUpdates = 0; this.lastPulseAccuracy = 0;
+        this.contextSnapshot = { hpRatio: 1, zoneDist: 0, zoneRadius: 1, threatDist: 9999 };
     }
-    recordCombatExperience(dist, targetHp, myHp, dirX, dirY, success) {
-        this.localKNN.record(dist, targetHp, myHp < 40, dirX, dirY);
-        if (success) { this.localKNN.hits++; this.iq = Math.min(100, this.iq + 0.3); }
+    recordCombatExperience(dist, targetHp, targetSpeed, isDashing, isChased, relativeAngle, myHp, dirX, dirY, success) {
+        this.localKNN.record(dist, targetHp, targetSpeed, isDashing, isChased, relativeAngle, dirX, dirY);
+        this.combatPhaseShots++;
+        if (success) {
+            this.localKNN.hits++;
+            this.combatPhaseHits++;
+            this.iq = Math.min(100, this.iq + 0.3);
+        }
         this.decisionsMade++;
     }
-    recordKill() { this.kills++; this.iq = Math.min(100, this.iq + 2); this.addLog('Hạ gục mục tiêu! IQ +2'); }
-    recordDamageDealt(amt) { this.damageDealt += amt; this.shotsHit++; this.iq = Math.min(100, this.iq + 0.15); }
+    recordKill() { this.kills++; this.iq = Math.min(100, this.iq + 2); this.addLog('Hạ gục mục tiêu! IQ +2'); this.stateTreeScores.COMBAT += 4; }
+    recordDamageDealt(amt) { this.damageDealt += amt; this.shotsHit++; this.iq = Math.min(100, this.iq + 0.15); this.stateTreeScores.COMBAT += 0.2; }
     recordShotFired() { this.shotsFired++; }
-    recordDodge() { this.damageAvoided++; this.iq = Math.min(100, this.iq + 0.1); }
+    recordDodge() { this.damageAvoided++; this.iq = Math.min(100, this.iq + 0.1); this.stateTreeScores.SURVIVAL += 0.2; }
     recordDangerZone(x, y) {
         if (this.tacticalMemory.length > this.maxTactical) this.tacticalMemory.shift();
         this.tacticalMemory.push({ x, y, time: Date.now() });
@@ -347,6 +497,20 @@ class BotBrain {
     isDangerousArea(x, y, radius = 150) {
         let now = Date.now();
         return this.tacticalMemory.some(m => (now - m.time < 15000) && Math.hypot(m.x - x, m.y - y) < radius);
+    }
+    runLearningPulse() {
+        let now = Date.now();
+        if (now - this.lastLearningPulse < 2500) return;
+        this.lastLearningPulse = now;
+        let acc = this.combatPhaseShots > 0 ? this.combatPhaseHits / this.combatPhaseShots : 0;
+        if (this.combatPhaseShots >= 2) {
+            this.stateTreeScores.COMBAT += acc > 0.35 ? 1 : -0.5;
+            this.stateTreeScores.SURVIVAL += acc < 0.2 ? 0.5 : 0;
+            this.lastPulseAccuracy = acc;
+            this.learningUpdates++;
+            this.addLog(`Online update: acc=${(acc*100).toFixed(0)}%, KNN=${this.localKNN.dataset.length}`);
+        }
+        this.combatPhaseShots = 0; this.combatPhaseHits = 0;
     }
     learnFromOther(otherBrain) {
         if (Date.now() - this.learnCooldown < 3000) return;
@@ -370,28 +534,60 @@ class BotBrain {
         this.addLog(`Học từ ${otherBrain.ownerName} (+${learnAmount.toFixed(1)} IQ)`);
     }
     getDeathKnowledge() {
-        return { dataset: this.localKNN.dataset.slice(-20), tacticalMemory: this.tacticalMemory.slice(-10), preferredRange: this.preferredRange, aggressionBias: this.aggressionBias, iq: this.iq };
+        return {
+            dataset: this.localKNN.dataset.slice(-20),
+            tacticalMemory: this.tacticalMemory.slice(-10),
+            preferredRange: this.preferredRange,
+            aggressionBias: this.aggressionBias,
+            iq: this.iq,
+            scores: { ...this.stateTreeScores },
+            learningUpdates: this.learningUpdates
+        };
     }
     absorbDeathKnowledge(knowledge) {
         knowledge.dataset.forEach(d => { this.localKNN.dataset.push({...d}); if (this.localKNN.dataset.length > this.localKNN.maxData) this.localKNN.dataset.shift(); });
         knowledge.tacticalMemory.forEach(m => this.tacticalMemory.push({...m}));
+        if (knowledge.scores) {
+            Object.keys(this.stateTreeScores).forEach(k => this.stateTreeScores[k] += (knowledge.scores[k] || 0) * 0.1);
+        }
+        this.learningUpdates += knowledge.learningUpdates ? Math.min(knowledge.learningUpdates, 3) : 0;
         let bonus = Math.min(3, knowledge.iq * 0.05);
         this.iq = Math.min(100, this.iq + bonus);
         this.addLog(`Kế thừa tri thức bot chết (+${bonus.toFixed(1)} IQ)`);
     }
     getAimSpread() { return Math.max(0.02, 0.15 - (this.iq / 100) * 0.12); }
     getFireRateMod() { return Math.max(0.7, 1.0 - (this.iq / 100) * 0.3); }
-    shouldEngage(myHp, maxHp, threatDist, threatCount) {
-        let hpRatio = myHp / maxHp;
-        let dynamicThreshold = this.fleeThreshold + (threatCount - 1) * 0.1;
-        if (hpRatio < dynamicThreshold) return false;
-        if (this.iq > 50 && threatDist < 150 && threatCount > 2) return false;
-        return hpRatio > 0.4 || this.aggressionBias > 0.7;
+    chooseMacroState(context) {
+        let c = this.stateTreeScores;
+        c.COMBAT = (context.threatDist < context.attackRange ? 3 : 0) + (context.hpRatio > 0.45 ? 1 : -1) + this.aggressionBias;
+        c.SURVIVAL = (context.hpRatio < this.fleeThreshold ? 4 : 0) + (context.nearbyThreats > 2 ? 2 : 0) + (context.zonePressure ? 2 : 0);
+        c.RESOURCE = (context.itemDist < 450 ? 2 : 0) + (context.hpRatio < 0.8 ? 1 : 0);
+        c.EXPLORE = 1 + (context.threatDist > 650 ? 1.5 : 0);
+        c.SAFEZONE = (context.outsideZone ? 8 : 0) + (context.zonePressure ? 4 : 0);
+        let best = Object.entries(c).sort((a, b) => b[1] - a[1])[0];
+        this.currentMacroState = best ? best[0] : 'EXPLORE';
+        return this.currentMacroState;
     }
-    predictTarget(dist, targetHp, isChased) {
-        let localPred = this.localKNN.predict(dist, targetHp, isChased, 3);
+    chooseCombatTactic(context) {
+        // Decision Tree cho micro tactic trong COMBAT
+        if (!context.hasLOS) return this.iq > 35 ? 'ambush' : 'aggressive attack';
+        if (context.hpRatio < 0.3) return 'retreat fire';
+        if (context.threatDist < this.preferredRange - 100) return 'kite';
+        if (context.threatDist > this.preferredRange + 90) return 'aggressive attack';
+        if (context.targetIsDashing || context.targetSpeed > 2.5) return 'strafe';
+        return this.iq > 35 ? 'strafe' : 'aggressive attack';
+    }
+    chooseSurvivalTactic(context) {
+        // Decision Tree cho micro tactic trong SURVIVAL
+        if (context.itemDist < 320 && context.hpRatio < 0.7) return 'resource fallback';
+        if (context.threatDist < 260) return 'dash escape';
+        if (context.zonePressure) return 'zone reposition';
+        return 'safe drift';
+    }
+    predictTarget(dist, targetHp, targetSpeed, isDashing, isChased, relativeAngle) {
+        let localPred = this.localKNN.predict(dist, targetHp, targetSpeed, isDashing, isChased, relativeAngle, 3);
         if (localPred && this.localKNN.dataset.length >= 10) return localPred;
-        return GlobalKNN.predict(dist, targetHp, isChased, 3);
+        return GlobalKNN.predict(dist, targetHp, targetSpeed, isDashing, isChased, relativeAngle, 3);
     }
     getAccuracy() { return this.shotsFired > 0 ? (this.shotsHit / this.shotsFired * 100).toFixed(1) : '0.0'; }
     addLog(msg) { this.knowledgeLog.push({ time: Date.now(), msg }); if (this.knowledgeLog.length > this.maxLogSize) this.knowledgeLog.shift(); }
@@ -497,7 +693,7 @@ class Player extends Entity {
             if (inputKeys[' '] && now - this.lastDash > this.dashCooldown && (dx !== 0 || dy !== 0)) {
                 this.isDashing = true; this.lastDash = now; this.dashTargetX = dx; this.dashTargetY = dy;
                 let distToCenter = Math.hypot(this.x - WORLD_WIDTH/2, this.y - WORLD_HEIGHT/2);
-                GlobalKNN.record(distToCenter, this.hp, false, dx, dy);
+                GlobalKNN.record(distToCenter, this.hp, this.speed, this.isDashing, false, 0, dx, dy);
             }
             if (inputKeys['r']) this.reload();
             if (inputMouse.down && now - this.lastShot > this.fireRate) {
@@ -533,6 +729,7 @@ class BotPlayer extends Player {
         this.brain.aggressionBias = 0.3 + Math.random()*0.5;
         this.brain.preferredRange = 220 + Math.random()*120;
         this.lastHp = this.hp; this.lastLearnTick = 0;
+        this.pathCache = { waypoints: [], idx: 0, lastCalc: 0, tx: this.x, ty: this.y, reason: "", lastPosX: this.x, lastPosY: this.y, stuckAt: 0 };
     }
     hasLineOfSight(target, obstacles) {
         for (let obs of obstacles) { if (lineRectIntersect(this.x, this.y, target.x, target.y, obs.x, obs.y, obs.w, obs.h)) return false; }
@@ -545,76 +742,115 @@ class BotPlayer extends Player {
             if (now - this.lastDash > this.dashTime) this.isDashing = false;
             else { this.x += this.dashTargetX * this.dashSpeed; this.y += this.dashTargetY * this.dashSpeed; this.resolveCollisions(obstacles); return; }
         }
+
         if (now - this.lastLearnTick > 2000) {
             this.lastLearnTick = now;
             let otherBots = players.filter(p => p !== this && p.isBot && !p.isDead && p.brain);
             for (let other of otherBots) { if (Math.hypot(this.x-other.x, this.y-other.y) < 600) this.brain.learnFromOther(other.brain); }
             this.brain.iq = Math.min(100, this.brain.iq + 0.05);
+            this.brain.runLearningPulse();
         }
+
         if (this.hp < this.lastHp) { this.brain.recordDangerZone(this.x, this.y); KnowledgePool.addEvent('damage_taken', {x:this.x,y:this.y,bot:this.name}); }
-        else if (this.hp === this.lastHp && this.state === 'FLEE') this.brain.recordDodge();
+        else if (this.hp === this.lastHp && this.state === 'SURVIVAL') this.brain.recordDodge();
         this.lastHp = this.hp;
+
         this.checkZoneDamage(zone);
         this.brain.decisionsMade++;
+
         let distToZone = Math.hypot(this.x-zone.x, this.y-zone.y);
         let allThreats = players.filter(p => p !== this && !p.isDead).concat(monsters);
         let closestThreat = this.getClosest(allThreats);
         let closestItem = this.getClosest(items);
         let nearbyThreats = allThreats.filter(t => !t.isDead && Math.hypot(this.x-t.x, this.y-t.y) < 400).length;
-        let smartFleeThreshold = this.brain.fleeThreshold;
         let smartAttackRange = 400 + (this.brain.iq/100)*150;
-        if (distToZone > zone.radius - 50) { this.state = "ZONE"; this.moveTo(zone.x, zone.y); }
-        else if (this.hp < this.maxHp * smartFleeThreshold || !this.brain.shouldEngage(this.hp, this.maxHp, closestThreat ? closestThreat.dist : 9999, nearbyThreats)) {
-            this.state = "FLEE";
-            if (closestItem && closestItem.dist < 350) this.moveTo(closestItem.x, closestItem.y);
-            else {
-                if (closestThreat && closestThreat.dist < 300) {
-                    let dirX = this.x - closestThreat.entity.x, dirY = this.y - closestThreat.entity.y;
-                    if (this.brain.iq > 40) { let safeDirX = (zone.x-this.x)*0.3+dirX*0.7; let safeDirY = (zone.y-this.y)*0.3+dirY*0.7; this.moveDir(safeDirX, safeDirY); }
-                    else this.moveDir(dirX, dirY);
-                    if (now - this.lastDash > this.dashCooldown) this.triggerDash(dirX, dirY);
-                } else this.wander();
+
+        let context = {
+            hpRatio: this.hp / this.maxHp,
+            threatDist: closestThreat ? closestThreat.dist : 9999,
+            nearbyThreats,
+            itemDist: closestItem ? closestItem.dist : 9999,
+            attackRange: smartAttackRange,
+            zonePressure: distToZone > zone.radius - 90,
+            outsideZone: distToZone > zone.radius - 10,
+            zoneDist: distToZone,
+            zoneRadius: zone.radius
+        };
+
+        this.brain.contextSnapshot = { hpRatio: context.hpRatio, zoneDist: context.zoneDist, zoneRadius: context.zoneRadius, threatDist: context.threatDist };
+        let macro = this.brain.chooseMacroState(context);
+        if (context.outsideZone) macro = 'SAFEZONE';
+        this.state = macro;
+
+        if (macro === 'SAFEZONE') {
+            this.brain.currentTactic = 'zone return';
+            this.navigateTo(zone.x, zone.y, obstacles, 'safezone_return', true);
+            if (now - this.lastDash > this.dashCooldown) {
+                let zx = zone.x - this.x, zy = zone.y - this.y;
+                this.triggerDash(zx, zy);
             }
-        } else if (closestThreat && closestThreat.dist < smartAttackRange) {
-            this.state = "ATTACK";
+        } else if (macro === 'SURVIVAL') {
+            let survivalTactic = this.brain.chooseSurvivalTactic(context);
+            this.brain.currentTactic = survivalTactic;
+            if (survivalTactic === 'resource fallback' && closestItem && closestItem.dist < 500) {
+                this.navigateTo(closestItem.x, closestItem.y, obstacles, 'survival_item', false);
+            } else if ((survivalTactic === 'dash escape' || survivalTactic === 'zone reposition') && closestThreat && closestThreat.dist < 350) {
+                let dirX = this.x - closestThreat.entity.x, dirY = this.y - closestThreat.entity.y;
+                let safeDirX = (zone.x-this.x)*0.25 + dirX*0.75;
+                let safeDirY = (zone.y-this.y)*0.25 + dirY*0.75;
+                this.moveDir(safeDirX, safeDirY);
+                if (now - this.lastDash > this.dashCooldown) this.triggerDash(dirX, dirY);
+            } else {
+                this.navigateTo(zone.x, zone.y, obstacles, 'safezone_return', true);
+            }
+        } else if (macro === 'COMBAT' && closestThreat && closestThreat.dist < smartAttackRange + 120) {
             let target = closestThreat.entity;
             let los = this.hasLineOfSight(target, obstacles);
-            if (!los) this.moveTo(target.x, target.y);
+            let tactic = this.brain.chooseCombatTactic({ threatDist: closestThreat.dist, hpRatio: context.hpRatio, hasLOS: los, targetIsDashing: !!target.isDashing, targetSpeed: target.speed || 0 });
+            this.brain.currentTactic = tactic;
+
+            if (tactic === 'ambush' && !los) this.navigateTo(target.x, target.y, obstacles, 'combat_ambush', false);
+            else if (tactic === 'kite') this.moveDir(this.x-target.x, this.y-target.y);
+            else if (tactic === 'aggressive attack') this.navigateTo(target.x, target.y, obstacles, los ? 'combat_push' : 'combat_chase_los', !los);
+            else if (tactic === 'retreat fire') this.moveDir(this.x-target.x, this.y-target.y);
             else {
-                let prefRange = this.brain.preferredRange;
-                if (closestThreat.dist < prefRange - 80) this.moveDir(this.x-target.x, this.y-target.y);
-                else if (closestThreat.dist > prefRange + 70) this.moveTo(target.x, target.y);
-                else if (this.brain.iq > 35) {
-                    let perpX = -(target.y-this.y), perpY = target.x-this.x;
-                    let sDir = (Math.sin(now*0.003+this.x)>0) ? 1 : -1;
-                    this.moveDir(perpX*sDir, perpY*sDir);
-                }
-                let effectiveFireRate = this.fireRate * this.brain.getFireRateMod();
-                if (now - this.lastShot > effectiveFireRate) {
-                    if (this.ammo > 0 && !this.isReloading) {
-                        let shootTargetX = target.x, shootTargetY = target.y;
-                        let isChased = monsters.some(m => Math.hypot(m.x-target.x,m.y-target.y) < 150);
-                        let predictedDir = this.brain.predictTarget(closestThreat.dist, target.hp, isChased);
-                        if (predictedDir) {
-                            let timeToReach = closestThreat.dist / 10;
-                            let predictedSpeed = target.isDashing ? target.dashSpeed : target.speed;
-                            shootTargetX += predictedDir.x * predictedSpeed * timeToReach;
-                            shootTargetY += predictedDir.y * predictedSpeed * timeToReach;
-                            this.useKNNShot = true;
-                        } else this.useKNNShot = false;
-                        let ddx = target.x-this.x, ddy = target.y-this.y, dLen = Math.hypot(ddx,ddy);
-                        this.brain.recordCombatExperience(closestThreat.dist, target.hp, this.hp, ddx/dLen, ddy/dLen, false);
-                        this.brain.recordShotFired();
-                        this.shoot(shootTargetX, shootTargetY, projectiles);
-                    } else if (this.ammo <= 0 && !this.isReloading) this.reload();
-                }
+                let perpX = -(target.y-this.y), perpY = target.x-this.x;
+                let sDir = (Math.sin(now*0.003+this.x)>0) ? 1 : -1;
+                this.moveDir(perpX*sDir, perpY*sDir);
             }
-        } else {
-            this.state = "LOOT";
-            if (closestItem && closestItem.dist < 400) this.moveTo(closestItem.x, closestItem.y);
-            else if (this.brain.iq > 50 && closestItem && closestItem.dist < 700) this.moveTo(closestItem.x, closestItem.y);
+
+            let effectiveFireRate = this.fireRate * this.brain.getFireRateMod();
+            if (now - this.lastShot > effectiveFireRate) {
+                if (this.ammo > 0 && !this.isReloading) {
+                    let shootTargetX = target.x, shootTargetY = target.y;
+                    let isChased = monsters.some(m => Math.hypot(m.x-target.x,m.y-target.y) < 150);
+                    let ddx0 = target.x-this.x, ddy0 = target.y-this.y;
+                    let relAngle = Math.atan2(ddy0, ddx0);
+                    let predictedDir = this.brain.predictTarget(closestThreat.dist, target.hp, target.speed || 0, !!target.isDashing, isChased, relAngle);
+                    if (predictedDir) {
+                        let timeToReach = closestThreat.dist / 10;
+                        let predictedSpeed = target.isDashing ? target.dashSpeed : target.speed;
+                        shootTargetX += predictedDir.x * predictedSpeed * timeToReach;
+                        shootTargetY += predictedDir.y * predictedSpeed * timeToReach;
+                        this.useKNNShot = true;
+                    } else this.useKNNShot = false;
+
+                    let ddx = target.x-this.x, ddy = target.y-this.y, dLen = Math.hypot(ddx,ddy) || 1;
+                    let relAngleRec = Math.atan2(ddy, ddx);
+                    this.brain.recordCombatExperience(closestThreat.dist, target.hp, target.speed || 0, !!target.isDashing, isChased, relAngleRec, this.hp, ddx/dLen, ddy/dLen, false);
+                    this.brain.recordShotFired();
+                    this.shoot(shootTargetX, shootTargetY, projectiles);
+                } else if (this.ammo <= 0 && !this.isReloading) this.reload();
+            }
+        } else if (macro === 'RESOURCE') {
+            this.brain.currentTactic = 'loot route';
+            if (closestItem && closestItem.dist < 700) this.navigateTo(closestItem.x, closestItem.y, obstacles, 'resource_item', false);
             else this.wander();
+        } else {
+            this.brain.currentTactic = this.brain.isDangerousArea(this.x, this.y) ? 'avoid hotspot' : 'patrol';
+            this.wander();
         }
+
         this.resolveCollisions(obstacles);
     }
     shoot(tx, ty, projectiles) {
@@ -632,14 +868,39 @@ class BotPlayer extends Player {
     }
     moveTo(tx, ty) { let dx = tx-this.x, dy = ty-this.y, len = Math.hypot(dx,dy); if (len>0) { this.x += (dx/len)*this.speed*0.8; this.y += (dy/len)*this.speed*0.8; } }
     moveDir(dx, dy) { let len = Math.hypot(dx,dy); if (len>0) { this.x += (dx/len)*this.speed*0.8; this.y += (dy/len)*this.speed*0.8; } }
+    navigateTo(tx, ty, obstacles, reason = 'generic', forceRepath = false) {
+        let now = Date.now();
+        let moved = Math.hypot(this.x - this.pathCache.lastPosX, this.y - this.pathCache.lastPosY);
+        if (moved > 3) { this.pathCache.lastPosX = this.x; this.pathCache.lastPosY = this.y; this.pathCache.stuckAt = now; }
+        else if (!this.pathCache.stuckAt) this.pathCache.stuckAt = now;
+        let isStuck = now - this.pathCache.stuckAt > 550;
+        let targetMoved = Math.hypot(tx - this.pathCache.tx, ty - this.pathCache.ty) > 100;
+        let needRepath = forceRepath || isStuck || targetMoved || !this.pathCache.waypoints.length || this.pathCache.idx >= this.pathCache.waypoints.length || (now - this.pathCache.lastCalc > 420) || this.pathCache.reason !== reason;
+
+        if (needRepath) {
+            let path = Pathfinding.findPath(this.x, this.y, tx, ty, obstacles);
+            this.pathCache = { waypoints: path, idx: path.length > 1 ? 1 : 0, lastCalc: now, tx, ty, reason, lastPosX: this.x, lastPosY: this.y, stuckAt: now };
+        }
+
+        let wp = this.pathCache.waypoints[this.pathCache.idx];
+        if (wp) {
+            if (Math.hypot(this.x - wp.x, this.y - wp.y) < Math.max(28, this.radius + 10)) this.pathCache.idx++;
+            let nextWp = this.pathCache.waypoints[this.pathCache.idx];
+            if (nextWp) this.moveTo(nextWp.x, nextWp.y);
+            else this.moveTo(tx, ty);
+        } else {
+            this.moveTo(tx, ty);
+        }
+    }
     wander() { if (Date.now()-this.stateTimer>2000) { this.wanderAngle = Math.random()*Math.PI*2; this.stateTimer = Date.now(); } this.x += Math.cos(this.wanderAngle)*this.speed*0.5; this.y += Math.sin(this.wanderAngle)*this.speed*0.5; }
-    triggerDash(dx, dy) { this.isDashing = true; this.lastDash = Date.now(); let len = Math.hypot(dx,dy); this.dashTargetX = dx/len; this.dashTargetY = dy/len; }
+    triggerDash(dx, dy) { let len = Math.hypot(dx,dy); if (len === 0) return; this.isDashing = true; this.lastDash = Date.now(); this.dashTargetX = dx/len; this.dashTargetY = dy/len; }
 }
 
 class Monster extends Entity {
     constructor(x, y) {
         super(x, y, 10, '#ff3333', 30, "Zombie");
         this.speed = 0.8; this.damage = 10; this.attackRate = 1000; this.lastAttack = 0;
+        this.pathCache = { waypoints: [], idx: 0, lastCalc: 0, tx: x, ty: y };
     }
     update(players, monsters, obstacles) {
         if (this.isDead) return;
@@ -650,11 +911,32 @@ class Monster extends Entity {
             if (d < this.radius+p.radius && !p.isDashing) { if (now-this.lastAttack > this.attackRate) { p.takeDamage(this.damage); this.lastAttack = now; } }
             if (d < minD) { minD = d; target = p; }
         }
-        let moveX = 0, moveY = 0;
-        if (target) { let dx = target.x-this.x, dy = target.y-this.y, len = Math.hypot(dx,dy); moveX += dx/len; moveY += dy/len; }
-        for (let m of monsters) { if (m===this||m.isDead) continue; let d = Math.hypot(this.x-m.x,this.y-m.y); if (d<25) { moveX -= (m.x-this.x); moveY -= (m.y-this.y); } }
-        let moveLen = Math.hypot(moveX, moveY);
-        if (moveLen > 0) { this.x += (moveX/moveLen)*this.speed; this.y += (moveY/moveLen)*this.speed; }
+        if (target) {
+            let hasLOS = !obstacles.some(obs => lineRectIntersect(this.x, this.y, target.x, target.y, obs.x, obs.y, obs.w, obs.h));
+            if (hasLOS) {
+                let dx = target.x-this.x, dy = target.y-this.y, len = Math.hypot(dx,dy) || 1;
+                this.x += (dx/len)*this.speed; this.y += (dy/len)*this.speed;
+            } else {
+                let nowTs = Date.now();
+                let targetMoved = Math.hypot(target.x - this.pathCache.tx, target.y - this.pathCache.ty) > 90;
+                if (!this.pathCache.waypoints.length || this.pathCache.idx >= this.pathCache.waypoints.length || targetMoved || nowTs - this.pathCache.lastCalc > 450) {
+                    let path = Pathfinding.findPath(this.x, this.y, target.x, target.y, obstacles);
+                    this.pathCache = { waypoints: path, idx: path.length > 1 ? 1 : 0, lastCalc: nowTs, tx: target.x, ty: target.y };
+                }
+                let wp = this.pathCache.waypoints[this.pathCache.idx];
+                if (wp && Math.hypot(this.x-wp.x, this.y-wp.y) < 20) this.pathCache.idx++;
+                let nextWp = this.pathCache.waypoints[this.pathCache.idx];
+                if (nextWp) {
+                    let dx = nextWp.x-this.x, dy = nextWp.y-this.y, len = Math.hypot(dx,dy) || 1;
+                    this.x += (dx/len)*this.speed; this.y += (dy/len)*this.speed;
+                } else {
+                    // fallback tránh đứng im khi target rơi vào cell không đi được
+                    let dx = target.x-this.x, dy = target.y-this.y, len = Math.hypot(dx,dy) || 1;
+                    this.x += (dx/len)*this.speed*0.7; this.y += (dy/len)*this.speed*0.7;
+                }
+            }
+        }
+        for (let m of monsters) { if (m===this||m.isDead) continue; let d = Math.hypot(this.x-m.x,this.y-m.y); if (d<25) { this.x -= (m.x-this.x)*0.02; this.y -= (m.y-this.y)*0.02; } }
         this.resolveCollisions(obstacles); 
     }
 
@@ -722,7 +1004,12 @@ class Item {
 const keys = {};
 const mouse = { screenX: 0, screenY: 0, down: false };
 
-window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+window.addEventListener('keydown', e => {
+    let key = e.key.toLowerCase();
+    keys[key] = true;
+    if (currentScreen === 'game' && key === 'p') toggleAIDocModal();
+    if (currentScreen === 'game' && key === 'o') showMonsterPaths = !showMonsterPaths;
+});
 window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
 window.addEventListener('mousemove', e => { mouse.screenX = e.clientX; mouse.screenY = e.clientY; });
 window.addEventListener('mousedown', e => { if (currentScreen === 'game') mouse.down = true; });
@@ -735,6 +1022,7 @@ let safeZone, projectiles, items, monsters, obstacles, players, player1;
 let clientProjectiles = []; // client-side predicted projectiles (visual only)
 let gamePaused = false;
 let monsterSpawnInterval = null;
+let showMonsterPaths = false;
 
 // ================================================================
 // OBSTACLE GENERATION (deterministic with seed for multiplayer sync)
@@ -1422,7 +1710,7 @@ function gameLoop() {
 
     updateUI();
     updateStatusPanel();
-    updateAlgoPanel();
+    updateAIDocRealtime();
     checkWinCondition();
 
     requestAnimationFrame(gameLoop);
@@ -1487,6 +1775,7 @@ function clientGameLoop() {
     renderGame();
     updateUI();
     updateStatusPanel();
+    updateAIDocRealtime();
 
     // Client-side win condition check (from received state)
     if (gamePaused) {
@@ -1517,6 +1806,29 @@ function renderGame() {
     obstacles.forEach(obs => obs.draw(ctx));
     players.forEach(p => { if (!p.isDead) p.draw(ctx); });
     monsters.forEach(m => { if (!m.isDead) m.draw(ctx); });
+
+    if (showMonsterPaths) {
+        monsters.forEach(m => {
+            if (m.isDead || !m.pathCache || !m.pathCache.waypoints || m.pathCache.waypoints.length < 2) return;
+            ctx.beginPath();
+            ctx.moveTo(m.x, m.y);
+            for (let i = m.pathCache.idx || 0; i < m.pathCache.waypoints.length; i++) {
+                let wp = m.pathCache.waypoints[i];
+                ctx.lineTo(wp.x, wp.y);
+            }
+            ctx.strokeStyle = 'rgba(255, 80, 80, 0.95)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            let tw = m.pathCache.waypoints[m.pathCache.waypoints.length - 1];
+            if (tw) {
+                ctx.beginPath();
+                ctx.arc(tw.x, tw.y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = '#ff5252';
+                ctx.fill();
+            }
+        });
+    }
     items.forEach(item => item.draw(ctx));
     projectiles.forEach(proj => { if (proj.life > 0) proj.draw(ctx); });
     clientProjectiles.forEach(proj => { if (proj.life > 0) proj.draw(ctx); });
@@ -1579,59 +1891,54 @@ function updateStatusPanel() {
     document.getElementById('status-content').innerHTML = html;
 }
 
-let lastAlgoUpdate = 0;
-function updateAlgoPanel() {
-    let now = Date.now();
-    if (now - lastAlgoUpdate < 150) return;
-    lastAlgoUpdate = now;
+let aiDocVisible = false;
+function buildAIDocStats() {
+    let bots = players ? players.filter(p => p.isBot && p.brain) : [];
     let html = '';
-    html += `<div class="algo-row"><span>Global KNN Dataset:</span><span class="val">${GlobalKNN.dataset.length}/${GlobalKNN.maxData}</span></div>`;
-    html += `<div class="algo-row"><span>Knowledge Pool Events:</span><span class="val">${KnowledgePool.sharedEvents.length}</span></div>`;
-    html += '<hr style="border-color:#333;margin:6px 0">';
-    let bots = players.filter(p => p.isBot && p.brain);
     bots.forEach(bot => {
         let b = bot.brain;
-        let iqClass = b.iq >= 60 ? 'high-iq' : (b.iq >= 30 ? 'mid-iq' : 'low-iq');
-        let iqColor = b.iq >= 60 ? '#4CAF50' : (b.iq >= 30 ? '#ff9800' : '#f44336');
-        let aliveText = bot.isDead ? ' <span style="color:#f44336">[DEAD]</span>' : '';
-        html += `<div class="algo-bot-section ${iqClass}">`;
-        html += `<div style="font-weight:700;color:${bot.color};margin-bottom:4px">${bot.name}${aliveText}</div>`;
-        html += `<div class="algo-row"><span>IQ:</span><span class="val" style="color:${iqColor}">${b.iq.toFixed(1)} / 100</span></div>`;
-        html += `<div class="iq-bar-bg"><div class="iq-bar-fill" style="width:${b.iq}%;background:${iqColor}"></div></div>`;
-        html += `<div class="algo-row"><span>Local KNN Data:</span><span class="val">${b.localKNN.dataset.length}</span></div>`;
-        html += `<div class="algo-row"><span>Accuracy:</span><span class="val">${b.getAccuracy()}%</span></div>`;
-        html += `<div class="algo-row"><span>Kills:</span><span class="val">${b.kills}</span></div>`;
-        html += `<div class="algo-row"><span>Dmg Dealt:</span><span class="val">${Math.round(b.damageDealt)}</span></div>`;
-        html += `<div class="algo-row"><span>Shots Hit/Fired:</span><span class="val">${b.shotsHit}/${b.shotsFired}</span></div>`;
-        html += `<div class="algo-row"><span>Aim Spread:</span><span class="val">${(b.getAimSpread()*100).toFixed(1)}°</span></div>`;
-        html += `<div class="algo-row"><span>Fire Rate Mod:</span><span class="val">x${b.getFireRateMod().toFixed(2)}</span></div>`;
-        html += `<div class="algo-row"><span>Aggression:</span><span class="val">${(b.aggressionBias*100).toFixed(0)}%</span></div>`;
-        html += `<div class="algo-row"><span>Pref. Range:</span><span class="val">${Math.round(b.preferredRange)}px</span></div>`;
-        html += `<div class="algo-row"><span>Danger Zones:</span><span class="val">${b.tacticalMemory.length}</span></div>`;
-        html += `<div class="algo-row"><span>Survival:</span><span class="val">${b.getSurvivalMinutes()} min</span></div>`;
-        if (b.knowledgeLog.length > 0) {
-            html += '<div class="knowledge-log">';
-            b.knowledgeLog.slice(-5).reverse().forEach(log => {
-                let seconds = ((now-log.time)/1000).toFixed(0);
-                html += `<div><span style="color:#666">${seconds}s ago</span> ${log.msg}</div>`;
-            });
-            html += '</div>';
-        }
-        html += '</div>';
+        let hpPct = Math.max(0, Math.min(100, (bot.hp / bot.maxHp) * 100));
+        let zonePct = Math.max(0, Math.min(100, ((b.contextSnapshot.zoneRadius - b.contextSnapshot.zoneDist) / Math.max(1, b.contextSnapshot.zoneRadius)) * 100));
+        let pulseAge = ((Date.now() - b.lastLearningPulse) / 1000).toFixed(1);
+        html += `<div class="ai-doc-card"><div><b>${bot.name}</b> (${bot.isDead ? 'dead' : 'alive'})</div>`;
+        html += `<div>Macro State: ${b.currentMacroState}</div>`;
+        html += `<div>Tactic: ${b.currentTactic}</div>`;
+        html += `<div>Online KNN: ${b.localKNN.dataset.length} mẫu | Accuracy: ${b.getAccuracy()}%</div>`;
+        html += `<div>Learning pulse: ${b.learningUpdates} lần | gần nhất ${pulseAge}s | acc=${(b.lastPulseAccuracy*100).toFixed(0)}%</div>`;
+        html += `<div>Scores: C=${b.stateTreeScores.COMBAT.toFixed(1)}, S=${b.stateTreeScores.SURVIVAL.toFixed(1)}, R=${b.stateTreeScores.RESOURCE.toFixed(1)}, E=${b.stateTreeScores.EXPLORE.toFixed(1)}, Z=${b.stateTreeScores.SAFEZONE.toFixed(1)}</div>`;
+        html += `<div class="ai-metric"><label><span>HP</span><span>${hpPct.toFixed(0)}%</span></label><div class="bar"><div class="fill" style="width:${hpPct}%"></div></div></div>`;
+        html += `<div class="ai-metric"><label><span>Safe Zone Margin</span><span>${zonePct.toFixed(0)}%</span></label><div class="bar"><div class="fill" style="width:${zonePct}%"></div></div></div>`;
+        html += `<div class="ai-metric"><label><span>KNN Hit Ratio (phase)</span><span>${b.combatPhaseHits}/${b.combatPhaseShots}</span></label><div class="bar"><div class="fill" style="width:${Math.min(100, b.combatPhaseShots ? (b.combatPhaseHits/b.combatPhaseShots*100) : 0)}%"></div></div></div>`;
+        html += `</div>`;
     });
-    document.getElementById('algo-content').innerHTML = html;
+    if (!html) html = '<div class="ai-doc-card">Chưa có dữ liệu bot.</div>';
+    document.getElementById('ai-doc-stats').innerHTML = html;
 }
 
-let algoPanelVisible = true;
-function toggleAlgoPanel() {
-    algoPanelVisible = !algoPanelVisible;
-    let panel = document.getElementById('algo-panel');
-    let btn = document.getElementById('algo-toggle');
-    if (algoPanelVisible) { panel.classList.remove('hidden'); btn.textContent = '🧠 Intelligence ▼'; }
-    else { panel.classList.add('hidden'); btn.textContent = '🧠 Intelligence ▶'; }
+let lastAIDocUpdate = 0;
+function updateAIDocRealtime() {
+    if (!aiDocVisible) return;
+    let now = Date.now();
+    if (now - lastAIDocUpdate < 250) return;
+    lastAIDocUpdate = now;
+    buildAIDocStats();
+}
+
+function toggleAIDocModal(forceState) {
+    aiDocVisible = typeof forceState === 'boolean' ? forceState : !aiDocVisible;
+    let modal = document.getElementById('ai-doc-modal');
+    if (!modal) return;
+    if (aiDocVisible) {
+        lastAIDocUpdate = 0;
+        buildAIDocStats();
+        modal.classList.add('show');
+    } else {
+        modal.classList.remove('show');
+    }
 }
 
 function checkWinCondition() {
+
     if (gamePaused) return;
     let myPlayer = players[myPlayerIndex];
     let alive = players.filter(p => !p.isDead);
