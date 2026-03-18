@@ -255,6 +255,69 @@
         .algo-cycle-stage b { display: block; margin-bottom: 8px; color: #fff; }
         .algo-cycle-stage small { color: #a8bada; line-height: 1.5; }
         .algo-visual-note { margin-top: 12px; padding: 12px 14px; border-left: 3px solid #7ecfff; background: rgba(126,207,255,0.07); border-radius: 10px; color: #dce7fb; line-height: 1.6; }
+        .algo-motion-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+        .algo-case-card { padding: 18px; background: rgba(255,255,255,0.04); border: 1px solid rgba(126,207,255,0.12); border-radius: 18px; }
+        .algo-case-card h3 { margin: 0 0 8px; color: #ffeb3b; }
+        .algo-case-card p { margin: 0 0 12px; color: #d7e4f9; line-height: 1.6; }
+        .algo-case-note { margin-top: 12px; color: #a8bada; font-size: 13px; line-height: 1.5; }
+        .algo-mini-arena { position: relative; height: 190px; overflow: hidden; border-radius: 18px; border: 1px solid rgba(255,255,255,0.07); background: radial-gradient(circle at center, rgba(42,58,92,0.45), rgba(7,12,22,0.95)); }
+        .algo-mini-arena .actor, .algo-mini-arena .medkit, .algo-mini-arena .path-dot, .algo-mini-arena .bullet, .algo-mini-arena .safezone { position: absolute; }
+        .algo-mini-arena .actor { width: 18px; height: 18px; border-radius: 50%; box-shadow: 0 0 14px currentColor; }
+        .algo-mini-arena .actor.bot { background: #42a5f5; color: #42a5f5; }
+        .algo-mini-arena .actor.enemy { background: #ff5252; color: #ff5252; }
+        .algo-mini-arena .actor.threat { background: #ff9800; color: #ff9800; }
+        .algo-mini-arena .actor.zombie { background: #8bc34a; color: #8bc34a; }
+        .algo-mini-arena .actor.player { background: #e0f2fe; color: #e0f2fe; }
+        .algo-mini-arena .actor.lowhp::after { content: ''; position: absolute; left: -4px; right: -4px; top: -9px; height: 4px; border-radius: 999px; background: linear-gradient(90deg, #ef4444 45%, rgba(255,255,255,0.14) 45%); }
+        .algo-mini-arena .bullet { width: 58px; height: 3px; border-radius: 999px; background: linear-gradient(90deg, rgba(255,255,0,0), #ffeb3b, rgba(255,255,0,0)); }
+        .algo-mini-arena .medkit { width: 18px; height: 18px; border-radius: 6px; background: #f9a8d4; box-shadow: 0 0 12px rgba(249,168,212,0.6); }
+        .algo-mini-arena .medkit::before, .algo-mini-arena .medkit::after { content: ''; position: absolute; background: white; }
+        .algo-mini-arena .medkit::before { width: 10px; height: 3px; left: 4px; top: 7px; }
+        .algo-mini-arena .medkit::after { width: 3px; height: 10px; left: 7px; top: 4px; }
+        .algo-mini-arena .safezone { width: 112px; height: 112px; border-radius: 50%; border: 3px solid rgba(34,211,238,0.9); box-shadow: 0 0 26px rgba(34,211,238,0.3); }
+        .algo-mini-arena .danger-field { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(239,68,68,0.2), rgba(239,68,68,0.02)); }
+        .algo-mini-arena .wall { position: absolute; background: #475569; border-radius: 10px; box-shadow: inset 0 -4px 0 rgba(0,0,0,0.2); }
+        .algo-mini-arena .path-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(126,207,255,0.55); }
+        .algo-mini-arena .label { position: absolute; padding: 4px 8px; border-radius: 999px; background: rgba(6,10,18,0.72); color: #dce7fb; font-size: 11px; border: 1px solid rgba(255,255,255,0.08); }
+        .scene-combat .actor.bot { left: 34px; bottom: 34px; animation: combatBotStrafe 2.8s ease-in-out infinite; }
+        .scene-combat .actor.enemy { right: 38px; top: 34px; animation: combatEnemyStrafe 2.8s ease-in-out infinite; }
+        .scene-combat .bullet { left: 64px; top: 96px; transform: rotate(-18deg); animation: combatBulletPulse 1s linear infinite; }
+        .scene-combat .label.botlabel { left: 16px; bottom: 12px; }
+        .scene-combat .label.enemylabel { right: 16px; top: 12px; }
+        .scene-safezone .danger-field { animation: pulseDanger 1.8s ease-in-out infinite; }
+        .scene-safezone .safezone { right: 18px; top: 38px; animation: safeZoneGlow 2.2s ease-in-out infinite; }
+        .scene-safezone .actor.bot { left: 26px; top: 100px; animation: runToZone 3s ease-in-out infinite; }
+        .scene-safezone .actor.threat { left: 16px; top: 38px; animation: chaseThreat 3s ease-in-out infinite; }
+        .scene-safezone .bullet { left: 56px; top: 112px; transform: rotate(-8deg); animation: fadeTrail 1.2s linear infinite; }
+        .scene-resource .actor.bot { left: 30px; top: 76px; animation: moveToMedkit 3.1s ease-in-out infinite; }
+        .scene-resource .actor.enemy { right: 24px; top: 32px; animation: hoverThreat 2s ease-in-out infinite; }
+        .scene-resource .medkit { left: 128px; top: 82px; animation: medkitPulse 1.4s ease-in-out infinite; }
+        .scene-resource .label.medlabel { left: 108px; top: 18px; }
+        .scene-zombie .wall.one { left: 94px; top: 22px; width: 20px; height: 96px; }
+        .scene-zombie .wall.two { left: 94px; top: 134px; width: 20px; height: 36px; }
+        .scene-zombie .actor.player { right: 28px; top: 78px; animation: playerHold 2.6s ease-in-out infinite; }
+        .scene-zombie .actor.zombie { left: 22px; bottom: 24px; animation: zombieFlank 4.2s linear infinite; }
+        .scene-zombie .path-dot.p1 { left: 40px; bottom: 60px; animation-delay: 0s; }
+        .scene-zombie .path-dot.p2 { left: 70px; top: 118px; animation-delay: 0.35s; }
+        .scene-zombie .path-dot.p3 { left: 84px; top: 82px; animation-delay: 0.7s; }
+        .scene-zombie .path-dot.p4 { left: 124px; top: 56px; animation-delay: 1.05s; }
+        .scene-zombie .path-dot.p5 { left: 156px; top: 78px; animation-delay: 1.4s; }
+        .scene-zombie .path-dot { animation: pathBlink 1.8s ease-in-out infinite; }
+
+        @keyframes combatBotStrafe { 0%,100% { transform: translate(0, 0); } 50% { transform: translate(44px, -22px); } }
+        @keyframes combatEnemyStrafe { 0%,100% { transform: translate(0, 0); } 50% { transform: translate(-38px, 20px); } }
+        @keyframes combatBulletPulse { 0% { opacity: 0; transform: rotate(-18deg) scaleX(0.5); } 40% { opacity: 1; } 100% { opacity: 0; transform: rotate(-18deg) translateX(82px) scaleX(1.15); } }
+        @keyframes pulseDanger { 0%,100% { opacity: 0.35; } 50% { opacity: 0.7; } }
+        @keyframes safeZoneGlow { 0%,100% { transform: scale(1); } 50% { transform: scale(0.94); } }
+        @keyframes runToZone { 0% { transform: translate(0, 0); } 65% { transform: translate(126px, -22px); } 100% { transform: translate(0, 0); } }
+        @keyframes chaseThreat { 0% { transform: translate(0, 0); } 65% { transform: translate(74px, 26px); } 100% { transform: translate(0, 0); } }
+        @keyframes fadeTrail { 0% { opacity: 0; } 30% { opacity: 0.9; } 100% { opacity: 0; transform: rotate(-8deg) translateX(42px); } }
+        @keyframes moveToMedkit { 0%,100% { transform: translate(0, 0); } 55% { transform: translate(96px, 10px); } }
+        @keyframes hoverThreat { 0%,100% { transform: translate(0, 0); } 50% { transform: translate(-14px, 18px); } }
+        @keyframes medkitPulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.18); } }
+        @keyframes zombieFlank { 0% { transform: translate(0, 0); } 25% { transform: translate(42px, -34px); } 50% { transform: translate(72px, -88px); } 75% { transform: translate(116px, -100px); } 100% { transform: translate(156px, -74px); } }
+        @keyframes playerHold { 0%,100% { transform: translate(0, 0); } 50% { transform: translate(-4px, 0); } }
+        @keyframes pathBlink { 0%,100% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.15); } }
         .algo-step-list { display: grid; gap: 12px; }
         .algo-step { padding: 16px; display: grid; grid-template-columns: 56px 1fr; gap: 14px; }
         .algo-step-no {
@@ -392,6 +455,16 @@
                         </div>
                     </div>
                 </div>
+            </section>
+
+            <section class="algo-section" id="algo-motion-section">
+                <div class="algo-section-header">
+                    <div>
+                        <h2>Đồ hoạ chuyển động theo tình huống trận</h2>
+                        <p>Các animation nhỏ bên dưới mô tả những case thường xảy ra trong trận: giao tranh, chạy bo, loot khi thấp máu và zombie đi vòng tường.</p>
+                    </div>
+                </div>
+                <div class="algo-motion-grid" id="algo-motion-cases"></div>
             </section>
 
             <section class="algo-section" id="algo-systems-section">
@@ -571,6 +644,33 @@ const ALGORITHM_CYCLE_STAGES = [
     { title: 'Micro logic', desc: 'Decision Tree biến trạng thái lớn thành tactic cụ thể như kite, ambush hay dash escape.' },
     { title: 'Execution', desc: 'A* lo đường đi, KNN lo điểm ngắm, player logic lo bắn/dash/collision.' },
     { title: 'Feedback', desc: 'Learning pulse, GlobalKNN và knowledge sharing cập nhật chất lượng cho vòng sau.' }
+];
+
+const ALGORITHM_MATCH_CASES = [
+    {
+        scene: 'combat',
+        title: 'Case 1: Combat strafe + predictive shot',
+        desc: 'Bot thấy target trong tầm, chọn COMBAT rồi strafe để khó bị bắn ngược trong lúc KNN hỗ trợ lead shot.',
+        note: 'Quan sát chấm xanh và đỏ di chuyển lệch nhịp, còn vệt đạn vàng mô tả pha bắn đón đầu.'
+    },
+    {
+        scene: 'safezone',
+        title: 'Case 2: Bị ép bo, phải chạy vào safe zone',
+        desc: 'Khi outsideZone hoặc zonePressure quá lớn, bot ép macro state sang SAFEZONE và dash/repath vào vòng an toàn.',
+        note: 'Vùng đỏ là khu nguy hiểm, vòng xanh là safe zone và chấm cam là mối đe doạ đang dí theo.'
+    },
+    {
+        scene: 'resource',
+        title: 'Case 3: Thấp máu, loot item rồi rút',
+        desc: 'Nếu HP thấp mà item gần, Decision Tree có thể chọn resource fallback để hồi phục thay vì cố combat.',
+        note: 'Chấm xanh có thanh máu thấp di chuyển tới medkit màu hồng trong khi địch vẫn còn ở gần.'
+    },
+    {
+        scene: 'zombie',
+        title: 'Case 4: Zombie mất line-of-sight và flank bằng A*',
+        desc: 'Zombie thấy player nhưng bị tường chắn nên đổi sang tìm đường qua waypoint thay vì lao thẳng vào obstacle.',
+        note: 'Các chấm sáng nhỏ là waypoint A*; zombie xanh lá đi vòng qua hành lang để tới người chơi.'
+    }
 ];
 
 const ALGORITHM_OVERVIEW_STEPS = [
@@ -1784,6 +1884,7 @@ function renderAlgorithmDocs() {
         ['#algorithm-screen', 'Tổng quan', 'Mô tả nhanh kiến trúc thuật toán'],
         ['#algo-overview-section', 'Pipeline', 'Chuỗi xử lý đầy đủ theo từng frame'],
         ['#algo-visual-section', 'Đồ hoạ', 'Sơ đồ trực quan cho từng hệ thống'],
+        ['#algo-motion-section', 'Animation', 'Các tình huống có thể xảy ra trong trận'],
         ['#algo-systems-section', 'Thuật toán riêng lẻ', 'State Tree, KNN, A*, multiplayer...'],
         ['#algo-combined-section', 'Kết hợp', 'Các tầng phối hợp ra quyết định'],
         ['#algo-scenarios-section', 'Step by step', '3 tình huống mẫu để đọc nhanh'],
@@ -1804,6 +1905,7 @@ function renderAlgorithmDocs() {
     const knnGraphic = document.getElementById('algo-knn-graphic');
     const astarGraphic = document.getElementById('algo-astar-graphic');
     const cycleGraphic = document.getElementById('algo-cycle-graphic');
+    const motionCases = document.getElementById('algo-motion-cases');
 
     pipelineGraphic.innerHTML = ALGORITHM_PIPELINE_GRAPHIC.map((item, index) => `${index ? '<div class="algo-pipeline-arrow">→</div>' : ''}<div class="algo-pipeline-node"><strong>${item.title}</strong><span>${item.desc}</span></div>`).join('');
 
@@ -1849,6 +1951,61 @@ function renderAlgorithmDocs() {
         </div>
         <div class="algo-visual-note">Đây là lý do hệ AI trong repo này trông “thông minh hơn rule-based thuần”: nó không chỉ chọn luật, mà còn có nhánh học và phản hồi để điều chỉnh chất lượng hành vi.</div>
     `;
+
+    const motionSceneMarkup = {
+        combat: `
+            <div class="algo-mini-arena scene-combat">
+                <div class="actor bot"></div>
+                <div class="actor enemy"></div>
+                <div class="bullet"></div>
+                <div class="label botlabel">Bot strafe</div>
+                <div class="label enemylabel">Target dash</div>
+            </div>
+        `,
+        safezone: `
+            <div class="algo-mini-arena scene-safezone">
+                <div class="danger-field"></div>
+                <div class="safezone"></div>
+                <div class="actor bot"></div>
+                <div class="actor threat"></div>
+                <div class="bullet"></div>
+                <div class="label" style="left:14px;top:12px">Outside zone</div>
+                <div class="label" style="right:18px;bottom:12px">Safe zone</div>
+            </div>
+        `,
+        resource: `
+            <div class="algo-mini-arena scene-resource">
+                <div class="actor bot lowhp"></div>
+                <div class="actor enemy"></div>
+                <div class="medkit"></div>
+                <div class="label medlabel">Resource fallback</div>
+            </div>
+        `,
+        zombie: `
+            <div class="algo-mini-arena scene-zombie">
+                <div class="wall one"></div>
+                <div class="wall two"></div>
+                <div class="path-dot p1"></div>
+                <div class="path-dot p2"></div>
+                <div class="path-dot p3"></div>
+                <div class="path-dot p4"></div>
+                <div class="path-dot p5"></div>
+                <div class="actor zombie"></div>
+                <div class="actor player"></div>
+                <div class="label" style="left:16px;top:12px">A* flank</div>
+                <div class="label" style="right:18px;bottom:12px">Player</div>
+            </div>
+        `
+    };
+
+    motionCases.innerHTML = ALGORITHM_MATCH_CASES.map(item => `
+        <article class="algo-case-card">
+            <h3>${item.title}</h3>
+            <p>${item.desc}</p>
+            ${motionSceneMarkup[item.scene] || ''}
+            <div class="algo-case-note">${item.note}</div>
+        </article>
+    `).join('');
 
     overview.innerHTML = ALGORITHM_OVERVIEW_STEPS.map((step, index) => `
         <article class="algo-step">
