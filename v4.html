@@ -205,6 +205,56 @@
         .algo-mini-card b { color: #7ecfff; display: block; margin-bottom: 8px; }
         .algo-mini-card p { margin: 0; color: #d7e4f9; line-height: 1.5; }
         .algo-flow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+        .algo-visual-stack { display: grid; gap: 18px; }
+        .algo-visual-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+        .algo-visual-card { padding: 18px; background: rgba(255,255,255,0.04); border: 1px solid rgba(126,207,255,0.12); border-radius: 18px; }
+        .algo-visual-card h3 { margin: 0 0 12px; color: #ffeb3b; }
+        .algo-visual-card p { margin: 0 0 14px; color: #d7e4f9; line-height: 1.6; }
+        .algo-pipeline-graphic { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; align-items: center; }
+        .algo-pipeline-node { position: relative; min-height: 108px; padding: 14px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.08); background: linear-gradient(180deg, rgba(126,207,255,0.12), rgba(255,255,255,0.04)); }
+        .algo-pipeline-node strong { display: block; color: #fff; margin-bottom: 8px; font-size: 15px; }
+        .algo-pipeline-node span { color: #bed1f2; font-size: 13px; line-height: 1.45; }
+        .algo-pipeline-arrow { display: flex; align-items: center; justify-content: center; color: #7ecfff; font-size: 26px; font-weight: 900; }
+        .algo-branch-tree { display: grid; gap: 14px; }
+        .algo-tree-root { text-align: center; padding: 14px 16px; border-radius: 16px; background: linear-gradient(135deg, rgba(66,165,245,0.18), rgba(25,118,210,0.18)); border: 1px solid rgba(126,207,255,0.2); }
+        .algo-tree-root strong { display: block; color: #fff; font-size: 16px; }
+        .algo-tree-root span { color: #bed1f2; font-size: 13px; }
+        .algo-tree-branches { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+        .algo-branch { padding: 14px; border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); min-height: 120px; }
+        .algo-branch b { display: block; margin-bottom: 8px; }
+        .algo-branch small { display: block; color: #a8bada; line-height: 1.45; }
+        .algo-branch.safe { box-shadow: inset 0 0 0 1px rgba(0,188,212,0.25); }
+        .algo-branch.combat { box-shadow: inset 0 0 0 1px rgba(244,67,54,0.25); }
+        .algo-branch.survival { box-shadow: inset 0 0 0 1px rgba(255,152,0,0.25); }
+        .algo-branch.resource { box-shadow: inset 0 0 0 1px rgba(156,39,176,0.25); }
+        .algo-branch.explore { box-shadow: inset 0 0 0 1px rgba(96,125,139,0.25); }
+        .algo-knn-board { display: grid; gap: 12px; }
+        .algo-feature-bars { display: grid; gap: 10px; }
+        .algo-feature-row { display: grid; grid-template-columns: 110px 1fr 42px; gap: 10px; align-items: center; }
+        .algo-feature-row label { color: #dce7fb; font-size: 13px; }
+        .algo-feature-bar { height: 10px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
+        .algo-feature-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #42a5f5, #ab47bc); }
+        .algo-feature-row span { color: #7ecfff; font-size: 12px; text-align: right; }
+        .algo-knn-neighbors { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+        .algo-neighbor { flex: 1 1 80px; min-width: 80px; padding: 10px; border-radius: 14px; text-align: center; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
+        .algo-neighbor b { color: #fff; display: block; }
+        .algo-neighbor small { color: #a8bada; }
+        .algo-aim-output { margin-top: 10px; padding: 12px; border-radius: 14px; background: linear-gradient(135deg, rgba(255,0,255,0.14), rgba(126,207,255,0.12)); color: #e9f0ff; }
+        .algo-grid-demo { display: grid; grid-template-columns: repeat(8, 24px); gap: 6px; justify-content: center; margin-top: 8px; }
+        .algo-grid-cell { width: 24px; height: 24px; border-radius: 7px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.05); }
+        .algo-grid-cell.block { background: #334155; }
+        .algo-grid-cell.path { background: #42a5f5; box-shadow: 0 0 10px rgba(66,165,245,0.5); }
+        .algo-grid-cell.start { background: #22c55e; }
+        .algo-grid-cell.goal { background: #f97316; }
+        .algo-grid-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+        .algo-grid-legend span { display: inline-flex; align-items: center; gap: 6px; color: #dce7fb; font-size: 12px; }
+        .algo-grid-legend i { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+        .algo-cycle-graphic { display: grid; gap: 12px; }
+        .algo-cycle-ring { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+        .algo-cycle-stage { padding: 14px; min-height: 110px; border-radius: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); }
+        .algo-cycle-stage b { display: block; margin-bottom: 8px; color: #fff; }
+        .algo-cycle-stage small { color: #a8bada; line-height: 1.5; }
+        .algo-visual-note { margin-top: 12px; padding: 12px 14px; border-left: 3px solid #7ecfff; background: rgba(126,207,255,0.07); border-radius: 10px; color: #dce7fb; line-height: 1.6; }
         .algo-step-list { display: grid; gap: 12px; }
         .algo-step { padding: 16px; display: grid; grid-template-columns: 56px 1fr; gap: 14px; }
         .algo-step-no {
@@ -227,6 +277,8 @@
             .algo-sidebar { position: static; height: auto; border-right: 0; border-bottom: 1px solid rgba(126, 207, 255, 0.15); }
             .algo-content { padding: 24px 18px 40px; }
             .algo-step { grid-template-columns: 1fr; }
+            .algo-feature-row { grid-template-columns: 1fr; }
+            .algo-cycle-ring { grid-template-columns: 1fr 1fr; }
         }
     </style>
 </head>
@@ -302,6 +354,46 @@
                 </div>
                 <div class="algo-step-list" id="algo-overview-steps"></div>
             </section>
+            <section class="algo-section" id="algo-visual-section">
+                <div class="algo-section-header">
+                    <div>
+                        <h2>Mô tả bằng đồ hoạ</h2>
+                        <p>Phần này chuyển logic kỹ thuật thành sơ đồ trực quan để nhìn là hiểu luồng hoạt động của từng thuật toán và cách chúng nối với nhau.</p>
+                    </div>
+                </div>
+                <div class="algo-visual-stack">
+                    <div class="algo-visual-card">
+                        <h3>Sơ đồ pipeline AI</h3>
+                        <p>Mỗi khung là một tầng xử lý. Khi bot cần quyết định, nó đi tuần tự qua các tầng này.</p>
+                        <div class="algo-pipeline-graphic" id="algo-pipeline-graphic"></div>
+                    </div>
+                    <div class="algo-visual-grid">
+                        <div class="algo-visual-card">
+                            <h3>State Tree dạng cây nhánh</h3>
+                            <p>State Tree là bộ định tuyến chiến lược: nhìn context rồi đẩy bot vào 1 trong 5 nhánh chính.</p>
+                            <div class="algo-branch-tree" id="algo-state-tree-graphic"></div>
+                        </div>
+                        <div class="algo-visual-card">
+                            <h3>KNN predictor dạng đồ hoạ</h3>
+                            <p>KNN xem các feature hiện tại, tìm hàng xóm gần nhất rồi trả ra hướng bắn đón đầu.</p>
+                            <div class="algo-knn-board" id="algo-knn-graphic"></div>
+                        </div>
+                    </div>
+                    <div class="algo-visual-grid">
+                        <div class="algo-visual-card">
+                            <h3>A* grid pathfinding</h3>
+                            <p>Ô xanh là đường đi tối ưu, ô xám là tường, ô xanh lá là điểm bắt đầu và ô cam là đích.</p>
+                            <div id="algo-astar-graphic"></div>
+                        </div>
+                        <div class="algo-visual-card">
+                            <h3>Chu trình kết hợp giữa các thuật toán</h3>
+                            <p>Khi nhìn toàn hệ thống, mỗi thuật toán gánh một nhiệm vụ riêng rồi chuyển kết quả sang tầng tiếp theo.</p>
+                            <div class="algo-cycle-graphic" id="algo-cycle-graphic"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <section class="algo-section" id="algo-systems-section">
                 <div class="algo-section-header">
                     <div>
@@ -434,6 +526,51 @@ const ALGORITHM_HERO_STATS = [
     { label: 'Chu kỳ ra quyết định', value: 'Mỗi frame', note: 'Bot đánh giá lại bối cảnh liên tục trong game loop' },
     { label: 'Nhịp học online', value: '~2.5s', note: 'Learning pulse cập nhật score và hiệu quả bắn' },
     { label: 'Loại quyết định', value: 'Macro + Micro', note: 'Vừa chọn trạng thái lớn vừa chọn chiến thuật cụ thể' }
+];
+
+const ALGORITHM_PIPELINE_GRAPHIC = [
+    { title: 'Sense', desc: 'Đọc HP, địch, item, bo, LOS' },
+    { title: 'Score', desc: 'State Tree chấm điểm 5 macro state' },
+    { title: 'Select', desc: 'Decision Tree chọn tactic con' },
+    { title: 'Route', desc: 'A* hoặc move trực tiếp' },
+    { title: 'Predict', desc: 'KNN ước lượng hướng mục tiêu' },
+    { title: 'Act', desc: 'Bắn, dash, loot, retreat' },
+    { title: 'Learn', desc: 'Ghi dataset, pulse, share knowledge' }
+];
+
+const ALGORITHM_STATE_BRANCHES = [
+    { cls: 'safe', title: 'SAFEZONE', desc: 'Ngoài bo / sát mép bo → quay về tâm zone ngay.' },
+    { cls: 'combat', title: 'COMBAT', desc: 'Đủ HP + địch trong tầm → ưu tiên giao tranh.' },
+    { cls: 'survival', title: 'SURVIVAL', desc: 'HP thấp / bị vây / áp lực bo → rút lui thông minh.' },
+    { cls: 'resource', title: 'RESOURCE', desc: 'Thiếu máu + item gần → chuyển sang loot route.' },
+    { cls: 'explore', title: 'EXPLORE', desc: 'Ít nguy hiểm → tuần tra và tìm góc có lợi.' }
+];
+
+const ALGORITHM_KNN_FEATURES = [
+    ['distance', 72],
+    ['targetHp', 46],
+    ['targetSpeed', 61],
+    ['isDashing', 88],
+    ['isChased', 67],
+    ['relativeAngle', 54]
+];
+
+const ALGORITHM_ASTAR_CELLS = [
+    'start','path','empty','empty','block','empty','empty','empty',
+    'empty','path','block','empty','block','empty','block','empty',
+    'empty','path','block','empty','empty','empty','block','empty',
+    'empty','path','path','path','path','empty','block','empty',
+    'block','block','block','block','path','empty','empty','empty',
+    'empty','empty','empty','block','path','block','block','empty',
+    'empty','block','empty','empty','path','path','path','goal',
+    'empty','block','empty','empty','empty','block','empty','empty'
+];
+
+const ALGORITHM_CYCLE_STAGES = [
+    { title: 'Macro logic', desc: 'State Tree trả về trạng thái lớn để bot biết đang sống sót, đánh nhau hay đi loot.' },
+    { title: 'Micro logic', desc: 'Decision Tree biến trạng thái lớn thành tactic cụ thể như kite, ambush hay dash escape.' },
+    { title: 'Execution', desc: 'A* lo đường đi, KNN lo điểm ngắm, player logic lo bắn/dash/collision.' },
+    { title: 'Feedback', desc: 'Learning pulse, GlobalKNN và knowledge sharing cập nhật chất lượng cho vòng sau.' }
 ];
 
 const ALGORITHM_OVERVIEW_STEPS = [
@@ -1646,6 +1783,7 @@ function renderAlgorithmDocs() {
     const navItems = [
         ['#algorithm-screen', 'Tổng quan', 'Mô tả nhanh kiến trúc thuật toán'],
         ['#algo-overview-section', 'Pipeline', 'Chuỗi xử lý đầy đủ theo từng frame'],
+        ['#algo-visual-section', 'Đồ hoạ', 'Sơ đồ trực quan cho từng hệ thống'],
         ['#algo-systems-section', 'Thuật toán riêng lẻ', 'State Tree, KNN, A*, multiplayer...'],
         ['#algo-combined-section', 'Kết hợp', 'Các tầng phối hợp ra quyết định'],
         ['#algo-scenarios-section', 'Step by step', '3 tình huống mẫu để đọc nhanh'],
@@ -1660,6 +1798,57 @@ function renderAlgorithmDocs() {
             <p style="margin:10px 0 0;color:#c9d7ee;line-height:1.5">${item.note}</p>
         </div>
     `).join('');
+
+    const pipelineGraphic = document.getElementById('algo-pipeline-graphic');
+    const stateTreeGraphic = document.getElementById('algo-state-tree-graphic');
+    const knnGraphic = document.getElementById('algo-knn-graphic');
+    const astarGraphic = document.getElementById('algo-astar-graphic');
+    const cycleGraphic = document.getElementById('algo-cycle-graphic');
+
+    pipelineGraphic.innerHTML = ALGORITHM_PIPELINE_GRAPHIC.map((item, index) => `${index ? '<div class="algo-pipeline-arrow">→</div>' : ''}<div class="algo-pipeline-node"><strong>${item.title}</strong><span>${item.desc}</span></div>`).join('');
+
+    stateTreeGraphic.innerHTML = `
+        <div class="algo-tree-root">
+            <strong>Context Snapshot</strong>
+            <span>hpRatio + threatDist + nearbyThreats + itemDist + zonePressure + outsideZone</span>
+        </div>
+        <div class="algo-tree-branches">
+            ${ALGORITHM_STATE_BRANCHES.map(branch => `<div class="algo-branch ${branch.cls}"><b>${branch.title}</b><small>${branch.desc}</small></div>`).join('')}
+        </div>
+        <div class="algo-visual-note">Nhìn đồ hoạ này có thể thấy: State Tree không điều khiển chuyển động trực tiếp, mà đóng vai trò như <b>bộ phân luồng quyết định</b> để các thuật toán phía sau biết phải làm gì tiếp.</div>
+    `;
+
+    knnGraphic.innerHTML = `
+        <div class="algo-feature-bars">
+            ${ALGORITHM_KNN_FEATURES.map(([label, value]) => `<div class="algo-feature-row"><label>${label}</label><div class="algo-feature-bar"><div class="algo-feature-fill" style="width:${value}%"></div></div><span>${value}</span></div>`).join('')}
+        </div>
+        <div class="algo-knn-neighbors">
+            <div class="algo-neighbor"><b>NN #1</b><small>dist 0.18</small></div>
+            <div class="algo-neighbor"><b>NN #2</b><small>dist 0.24</small></div>
+            <div class="algo-neighbor"><b>NN #3</b><small>dist 0.31</small></div>
+        </div>
+        <div class="algo-aim-output">Output: hợp nhất 3 hàng xóm gần nhất → chuẩn hoá vector → bắn lệch về phía mục tiêu sắp di chuyển tới.</div>
+    `;
+
+    astarGraphic.innerHTML = `
+        <div class="algo-grid-demo">
+            ${ALGORITHM_ASTAR_CELLS.map(cell => `<div class="algo-grid-cell ${cell === 'empty' ? '' : cell}"></div>`).join('')}
+        </div>
+        <div class="algo-grid-legend">
+            <span><i style="background:#22c55e"></i> Start</span>
+            <span><i style="background:#42a5f5"></i> Path</span>
+            <span><i style="background:#334155"></i> Obstacle</span>
+            <span><i style="background:#f97316"></i> Goal</span>
+        </div>
+        <div class="algo-visual-note">A* biến vị trí thật thành ô lưới, né obstacle, rồi trả lại waypoint để bot/quái đi từng bước. Khi target đổi chỗ hoặc entity bị kẹt, path sẽ được tính lại.</div>
+    `;
+
+    cycleGraphic.innerHTML = `
+        <div class="algo-cycle-ring">
+            ${ALGORITHM_CYCLE_STAGES.map(stage => `<div class="algo-cycle-stage"><b>${stage.title}</b><small>${stage.desc}</small></div>`).join('')}
+        </div>
+        <div class="algo-visual-note">Đây là lý do hệ AI trong repo này trông “thông minh hơn rule-based thuần”: nó không chỉ chọn luật, mà còn có nhánh học và phản hồi để điều chỉnh chất lượng hành vi.</div>
+    `;
 
     overview.innerHTML = ALGORITHM_OVERVIEW_STEPS.map((step, index) => `
         <article class="algo-step">
